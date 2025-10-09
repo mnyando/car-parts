@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Car Parts - Catalog</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>Car Parts Catalog</h1>
+  <div class="products">
+    {% for p in products %}
+      <div class="product">
+        <h3>{{ p.name }}</h3>
+        <p>Price: ${{ '%.2f'|format(p.price) }}</p>
+        <form action="/checkout" method="post" class="checkout-form">
+          <input type="hidden" name="product_id" value="{{ p.id }}">
+          <input type="text" name="phone" placeholder="2547XXXXXXXX" required>
+          <button type="submit">Buy</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+  document.querySelectorAll('.checkout-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      const res = await fetch('/checkout', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+      const json = await res.json();
+      if (res.ok) alert('Payment initiated. Order ID: ' + json.order_id);
+      else alert('Error: ' + (json.error || 'unknown'));
+    })
+  })
+  </script>
+</body>
+</html>
