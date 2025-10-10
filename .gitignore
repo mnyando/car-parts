@@ -4,3 +4,7 @@ __pycache__/
 *.pyo
 .env.*
 serviceAccountKey.json
+*.DS_Store
+.venv/
+local_orders.json
+static/.DS_Store

@@ -78,6 +78,11 @@ PRODUCTS = [
 
 @app.route('/')
 def index():
+    return render_template('landing.html')
+
+
+@app.route('/catalog')
+def catalog():
     return render_template('catalog.html', products=PRODUCTS)
 
 @app.route('/checkout', methods=['POST'])

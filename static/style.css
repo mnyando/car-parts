@@ -1,5 +1,11 @@
-body { font-family: Arial, sans-serif; padding: 2rem; background: #f7f7f7; }
+body { font-family: Arial, sans-serif; padding: 1rem; background: #f7f7f7; }
+/* product grid */
 .products { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 1rem; }
 .product { background: white; padding: 1rem; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-input[type=text] { width: 100%; padding: .5rem; margin-bottom: .5rem; }
-button { background: #0078d4; color: white; border: none; padding: .6rem 1rem; border-radius: 4px; cursor: pointer; }
+.product input[type=text] { width: 100%; padding: .5rem; margin-bottom: .5rem; }
+.product button { background: #0078d4; color: white; border: none; padding: .6rem 1rem; border-radius: 4px; cursor: pointer; }
+
+/* carousel styling */
+.carousel-img { height: min(60vh, 420px); object-fit: cover; width: 100%; }
+.carousel-caption { background: rgba(0,0,0,0.35); padding: 1rem; border-radius: 6px; }
+.carousel { margin: 1.25rem auto 2rem; max-width: 1200px; }
