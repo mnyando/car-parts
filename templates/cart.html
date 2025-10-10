@@ -1,18 +1,24 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Cart</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <h1>Your Cart</h1>
-    <p><a href="{{ url_for('catalog') }}">Back to Catalog</a></p>
+{% extends 'base.html' %}
 
-    <div class="cart-wrapper">
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% endblock %}
+
+{% block content %}
+  {% include 'navbar.html' %}
+
+  <main class="main-container">
+    <section class="section">
+      <h2 class="section-title">Your Cart</h2>
       <div class="cart"></div>
-    </div>
+      <div class="cart-footer">
+        <h2 class="cart-footer-total" data-action="total-price">0</h2>
+        <a class="btn btn-primary btn-small btn-danger" href="{{ url_for('catalog') }}">Continue Shopping</a>
+      </div>
+    </section>
+  </main>
 
-    <script src="{{ url_for('static', filename='cart.js') }}"></script>
-  </body>
-</html>
+  {% include 'footer.html' %}
+
+  <script src="{{ url_for('static', filename='cart.js') }}"></script>
+{% endblock %}

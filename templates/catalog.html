@@ -1,47 +1,42 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Car Parts - Catalog</title>
-  <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-  <h1>Car Parts Catalog</h1>
-  <p><a href="{{ url_for('cart') }}">View Cart</a></p>
-  <div class="products">
-    {% for p in products %}
-      <div class="product">
-        <img class="product-image" src="{{ url_for('static', filename='images/slide' ~ (loop.index % 3 + 1) ~ '.jpg') }}" alt="{{ p.name }}">
-        <h3 class="product-name">{{ p.name }}</h3>
-        <p class="product-price">${{ '%.2f'|format(p.price) }}</p>
+{% extends 'base.html' %}
+{% block head_extra %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+{% endblock %}
 
-        <div class="product-actions">
-          <form action="/checkout" method="post" class="checkout-form">
-            <input type="hidden" name="product_id" value="{{ p.id }}">
-            <input type="text" name="phone" placeholder="2547XXXXXXXX" required>
-            <button type="submit" class="btn btn-primary">Buy</button>
-          </form>
+{% block content %}
+  {% include 'navbar.html' %}
+  <main class="main-container">
 
-          <button class="btn btn-outline-secondary" data-action="add-to-cart">Add To Cart</button>
+    <section class="section">
+      <h2 class="section-title">Products</h2>
+      <div class="products">
+        {% for p in products %}
+        <div class="product">
+          <img class="product-image" src="{{ url_for('static', filename='images/slide' ~ (loop.index % 3 + 1) ~ '.jpg') }}" alt="{{ p.name }}" />
+          <h2 class="product-name">{{ p.name }}</h2>
+          <h3 class="product-price">{{ '%.2f'|format(p.price) }}</h3>
+          <button class="btn btn-primary" data-action="add-to-cart" data-product-id="{{ p.id }}">Add To Cart</button>
         </div>
+        {% endfor %}
       </div>
-    {% endfor %}
-  </div>
+    </section>
 
-  <script>
-  document.querySelectorAll('.checkout-form').forEach(form => {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-      const res = await fetch('/checkout', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-      const json = await res.json();
-      if (res.ok) alert('Payment initiated. Order ID: ' + json.order_id);
-      else alert('Error: ' + (json.error || 'unknown'));
-    })
-  })
-  </script>
+    <section class="section">
+      <h2 class="section-title">Cart</h2>
+      <div class="cart"></div>
+      <div class="cart-footer">
+        <h2 class="cart-footer-total" data-action="total-price">0</h2>
+        <a class="btn btn-primary btn-small btn-danger" href="{{ url_for('index') }}">Go Back to homepage</a>
+      </div>
+    </section>
+
+    <div id="information">
+      <p>Your order will be processed and delivered within one hour of placing.</p>
+      <p>Make sure you have the total amount for the order during delivery.</p>
+      <p>In case of any comment or complaint, please reach out to us as fast as possible.</p>
+      <p id="regards">Regards, Management</p>
+    </div>
+  </main>
 
   <script src="{{ url_for('static', filename='cart.js') }}"></script>
-</body>
-</html>
+{% endblock %}
