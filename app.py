@@ -85,6 +85,11 @@ def index():
 def catalog():
     return render_template('catalog.html', products=PRODUCTS)
 
+
+@app.route('/cart')
+def cart():
+    return render_template('cart.html')
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
     data = request.form or request.json

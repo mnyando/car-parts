@@ -7,16 +7,23 @@
 </head>
 <body>
   <h1>Car Parts Catalog</h1>
+  <p><a href="{{ url_for('cart') }}">View Cart</a></p>
   <div class="products">
     {% for p in products %}
       <div class="product">
-        <h3>{{ p.name }}</h3>
-        <p>Price: ${{ '%.2f'|format(p.price) }}</p>
-        <form action="/checkout" method="post" class="checkout-form">
-          <input type="hidden" name="product_id" value="{{ p.id }}">
-          <input type="text" name="phone" placeholder="2547XXXXXXXX" required>
-          <button type="submit">Buy</button>
-        </form>
+        <img class="product-image" src="{{ url_for('static', filename='images/slide' ~ (loop.index % 3 + 1) ~ '.jpg') }}" alt="{{ p.name }}">
+        <h3 class="product-name">{{ p.name }}</h3>
+        <p class="product-price">${{ '%.2f'|format(p.price) }}</p>
+
+        <div class="product-actions">
+          <form action="/checkout" method="post" class="checkout-form">
+            <input type="hidden" name="product_id" value="{{ p.id }}">
+            <input type="text" name="phone" placeholder="2547XXXXXXXX" required>
+            <button type="submit" class="btn btn-primary">Buy</button>
+          </form>
+
+          <button class="btn btn-outline-secondary" data-action="add-to-cart">Add To Cart</button>
+        </div>
       </div>
     {% endfor %}
   </div>
@@ -34,5 +41,7 @@
     })
   })
   </script>
+
+  <script src="{{ url_for('static', filename='cart.js') }}"></script>
 </body>
 </html>
