@@ -64,21 +64,31 @@
       </div>
     </footer>
 
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa7Nj/8v+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
     <script>
-      // Ensure carousel initializes and auto-rotates
+      // Ensure carousel initializes and auto-rotates; fallback if Bootstrap not available
       document.addEventListener('DOMContentLoaded', function () {
         var el = document.querySelector('#carouselExampleIndicators');
         if (el) {
-          // Initialize using jQuery if available (Bootstrap 4 depends on jQuery)
           if (typeof jQuery !== 'undefined') {
             jQuery(el).carousel({ interval: 4000 });
           } else if (typeof bootstrap !== 'undefined' && bootstrap.Carousel) {
-            // fallback for Bootstrap 5
             new bootstrap.Carousel(el, { interval: 4000 });
+          } else {
+            // Manual fallback: rotate slides by toggling display
+            var items = el.querySelectorAll('.carousel-item');
+            if (items.length > 1) {
+              var idx = 0;
+              items.forEach(function(it,i){ it.style.display = (i===0)?'block':'none'; });
+              setInterval(function(){
+                items[idx].style.display='none';
+                idx = (idx+1) % items.length;
+                items[idx].style.display='block';
+              }, 4000);
+            }
           }
         }
       });
