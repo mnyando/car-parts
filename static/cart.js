@@ -15,8 +15,9 @@ function renderInitialCart(){
       countCartTotal();
       // mark buttons as in-cart
       addToCartButtonsDOM.forEach(addToCartButtonDOM => {
-        const productDOM = addToCartButtonDOM.parentNode;
-        if (productDOM.querySelector(".product-name").innerText === cartItem.name) {
+        const pid = addToCartButtonDOM.getAttribute('data-product-id');
+        // prefer id matching, fallback to name matching for older stored carts
+        if ((cartItem.id && pid && cartItem.id === pid) || (!cartItem.id && productMatchesByName(addToCartButtonDOM, cartItem.name))) {
           handleActionButtons(addToCartButtonDOM, cartItem);
         }
       });
@@ -27,14 +28,17 @@ function renderInitialCart(){
 addToCartButtonsDOM.forEach(addToCartButtonDOM => {
   addToCartButtonDOM.addEventListener("click", () => {
     const productDOM = addToCartButtonDOM.parentNode;
+    const productId = addToCartButtonDOM.getAttribute('data-product-id') || null;
     const product = {
+      id: productId,
       image: productDOM.querySelector(".product-image").getAttribute("src"),
       name: productDOM.querySelector(".product-name").innerText,
       price: formatPrice(productDOM.querySelector(".product-price").innerText),
       quantity: 1
     };
 
-    const isInCart = cart.filter(cartItem => cartItem.name === product.name).length > 0;
+    // prefer id-based matching; fallback to name
+    const isInCart = product.id ? cart.some(ci => ci.id === product.id) : cart.some(ci => ci.name === product.name);
 
     if (!isInCart) {
       insertItemToDOM(product);
@@ -52,6 +56,8 @@ function insertItemToDOM(product) {
     `
     <div class="cart-item">
         <img class="cart-item-image" src="${product.image}" alt="${product.name}" />
+        <!-- store product id on the DOM for later reference -->
+        <input type="hidden" class="cart-item-id" value="${product.id || ''}" />
         <h2 class="cart-item-name">${product.name}</h2>
         <h3 class="cart-item-price">${product.price.toFixed(2)}</h3>
         <button class="btn btn-primary btn-small" data-action="decrease-item">&minus;</button>
@@ -71,7 +77,12 @@ function handleActionButtons(addToCartButtonDOM, product) {
 
   const cartItemsDOM = document.querySelectorAll(".cart-item");
   cartItemsDOM.forEach(cartItemDOM => {
-    if (cartItemDOM.querySelector(".cart-item-name").innerText === product.name) {
+    // match by hidden id first, fallback to name
+    const domIdInput = cartItemDOM.querySelector('.cart-item-id');
+    const domId = domIdInput ? domIdInput.value : null;
+    const domName = cartItemDOM.querySelector('.cart-item-name').innerText;
+    const matches = (product.id && domId && product.id === domId) || (!product.id && domName === product.name) || (product.name === domName);
+    if (matches) {
       cartItemDOM.querySelector('[data-action="increase-item"]').addEventListener("click", () => increaseItem(product, cartItemDOM));
       cartItemDOM.querySelector('[data-action="decrease-item"]').addEventListener("click", () => decreaseItem(product, cartItemDOM, addToCartButtonDOM));
       cartItemDOM.querySelector('[data-action="remove-item"]').addEventListener("click", () => removeItem(product, cartItemDOM, addToCartButtonDOM));
@@ -81,7 +92,7 @@ function handleActionButtons(addToCartButtonDOM, product) {
 
 function increaseItem(product, cartItemDOM) {
   cart.forEach(cartItem => {
-    if (cartItem.name === product.name) {
+    if ((product.id && cartItem.id === product.id) || (!product.id && cartItem.name === product.name)) {
       cartItemDOM.querySelector(".cart-item-quantity").innerText = ++cartItem.quantity;
       saveCart();
     }
@@ -90,7 +101,7 @@ function increaseItem(product, cartItemDOM) {
 
 function decreaseItem(product, cartItemDOM, addToCartButtonDOM) {
   cart.forEach(cartItem => {
-    if (cartItem.name === product.name) {
+    if ((product.id && cartItem.id === product.id) || (!product.id && cartItem.name === product.name)) {
       if (cartItem.quantity > 1) {
         cartItemDOM.querySelector(".cart-item-quantity").innerText = --cartItem.quantity;
         saveCart();
@@ -103,10 +114,15 @@ function decreaseItem(product, cartItemDOM, addToCartButtonDOM) {
 
 function removeItem(product, cartItemDOM, addToCartButtonDOM) {
   cartItemDOM.remove();
-  cart = cart.filter(cartItem => cartItem.name !== product.name);
+  // remove by id if available, otherwise fallback to name
+  if (product.id) {
+    cart = cart.filter(cartItem => cartItem.id !== product.id);
+  } else {
+    cart = cart.filter(cartItem => cartItem.name !== product.name);
+  }
   saveCart();
   if (addToCartButtonDOM) {
-    addToCartButtonDOM.innerText = "Add to Cart";
+    addToCartButtonDOM.innerText = "Add To Cart";
     addToCartButtonDOM.disabled = false;
   }
 
@@ -155,7 +171,8 @@ function checkout(){
   alert("Thank you for shopping with us, Welcome again");
   cart = [];
   localStorage.removeItem("cart");
-  location.href = "{{ url_for('index') }}";
+  // redirect to home
+  location.href = '/';
 }
 
 function saveCart() {
