@@ -5,7 +5,7 @@
   /* --- Color: monochrome --- */
   --bg:            #FFFFFF;
   --ink:           #111111;   /* off-black, high contrast */
-  --ink-muted:     #777777;   /* subtext, captions, locations */
+  --ink-muted:     #6B6B6B;   /* subtext, captions, locations (contrast check passes WCAG AA 4.5:1) */
   --line:          #E6E6E6;   /* hairline borders */
   --line-strong:   #CFCFCF;
   --overlay:       #0A0A0A;   /* drawer / menu overlay */
