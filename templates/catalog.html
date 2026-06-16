@@ -1,36 +1,30 @@
 {% extends 'base.html' %}
-{% block head_extra %}
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-{% endblock %}
 
 {% block content %}
   {% include 'navbar.html' %}
-  <main class="main-container">
-
-    <section class="section">
-      <h2 class="section-title">Products</h2>
-      <div class="products">
-        {% for p in products %}
-        <div class="product">
-          <img class="product-image" src="{{ url_for('static', filename='images/slide' ~ (loop.index % 3 + 1) ~ '.jpg') }}" alt="{{ p.name }}" />
-          <h2 class="product-name">{{ p.name }}</h2>
-          <h3 class="product-price">{{ '%.2f'|format(p.price) }}</h3>
-          <button class="btn btn-primary" data-action="add-to-cart" data-product-id="{{ p.id }}">Add To Cart</button>
+  
+  <main class="container section">
+    <p class="eyebrow" data-reveal>Catalog</p>
+    
+    <div class="grid">
+      {% for p in products %}
+      <div class="product card" data-reveal>
+        <div class="card__media">
+          <img class="product-image" src="{{ url_for('static', filename='images/slide' ~ (loop.index % 3 + 1) ~ '.jpg') }}" alt="{{ p.name }}" loading="lazy" decoding="async">
         </div>
-        {% endfor %}
+        <div class="card__row">
+          <span class="product-name card__name">{{ p.name }}</span>
+          <span class="card__meta">Parts <i class="card__arrow">→</i></span>
+        </div>
+        <div class="card__price-row">
+          <span class="product-price pdp__price">${{ '%.2f'|format(p.price) }}</span>
+        </div>
+        <button class="pdp__add" data-action="add-to-cart" data-product-id="{{ p.id }}">Add To Cart</button>
       </div>
-    </section>
+      {% endfor %}
+    </div>
 
-    <section class="section">
-      <h2 class="section-title">Cart</h2>
-      <div class="cart"></div>
-      <div class="cart-footer">
-        <h2 class="cart-footer-total" data-action="total-price">0</h2>
-        <a class="btn btn-primary btn-small btn-danger" href="{{ url_for('index') }}">Go Back to homepage</a>
-      </div>
-    </section>
-
-    <div id="information">
+    <div id="information" class="trust" style="margin-top: var(--space-xl);">
       <p>Your order will be processed and delivered within one hour of placing.</p>
       <p>Make sure you have the total amount for the order during delivery.</p>
       <p>In case of any comment or complaint, please reach out to us as fast as possible.</p>

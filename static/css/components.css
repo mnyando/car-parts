@@ -36,6 +36,25 @@
 .hero__cta { display: inline-block; font-size: var(--fs-lead); border-bottom: 2px solid var(--ink); padding-bottom: 4px; transition: opacity var(--dur-fast) var(--ease); }
 .hero__cta:hover { opacity: 0.5; }
 
+/* --- Product Grid & Card --- */
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(24px, 4vw, 64px); margin-top: var(--space-md); }
+@media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+.card { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); padding: var(--space-sm); position: relative; }
+.card__media { aspect-ratio: 4 / 3; overflow: hidden; background: #f3f3f3; }
+.card__media img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur) var(--ease); }
+.card:hover .card__media img { transform: scale(1.05); }
+.card__row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; margin-bottom: 6px; }
+.card__name { font-size: var(--fs-h3); font-weight: 600; letter-spacing: var(--tracking-flat); color: var(--ink); }
+.card__meta { font-size: var(--fs-small); color: var(--ink-muted); text-transform: uppercase; font-weight: 500; letter-spacing: var(--tracking-wide); }
+.card__arrow { display: inline-block; transition: transform var(--dur-fast) var(--ease); font-style: normal; }
+.card:hover .card__arrow { transform: translateX(6px); }
+.card__price-row { margin-bottom: var(--space-sm); }
+.pdp__price { font-size: var(--fs-lead); font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pdp__add { width: 100%; background: var(--ink); color: #fff; border: none; padding: 14px; font: inherit; font-size: var(--fs-small); font-weight: 600; text-transform: uppercase; letter-spacing: var(--tracking-wide); cursor: pointer; transition: opacity var(--dur-fast) var(--ease); }
+.pdp__add:hover { opacity: 0.85; }
+.pdp__add:disabled { background: var(--line-strong); color: var(--ink-muted); cursor: not-allowed; }
+
+
 
 
 
