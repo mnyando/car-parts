@@ -168,11 +168,103 @@ function countCartTotal() {
 }
 
 function checkout(){
-  alert("Thank you for shopping with us, Welcome again");
-  cart = [];
-  localStorage.removeItem("cart");
-  // redirect to home
-  location.href = '/';
+  if (cart.length === 0) {
+    alert("Your cart is empty!");
+    return;
+  }
+  
+  // Find cart container in DOM
+  const container = document.querySelector(".cart");
+  if (!container) {
+    alert("Cart container not found!");
+    return;
+  }
+  
+  // Hide the standard cart footer temporarily
+  const footer = document.querySelector(".cart-footer");
+  if (footer) footer.style.display = "none";
+  
+  // Hide current cart items
+  const items = container.querySelectorAll(".cart-item");
+  items.forEach(el => el.style.display = "none");
+  
+  // Render M-Pesa checkout form inline
+  container.insertAdjacentHTML(
+    "beforeend",
+    `
+    <div class="checkout-form-container">
+      <div class="field">
+        <label for="checkout-phone">M-Pesa Phone Number</label>
+        <input type="tel" id="checkout-phone" placeholder="e.g. 254712345678" value="2547" required>
+      </div>
+      <button class="btn btn-primary" id="trigger-stk-push" style="width:100%; margin-top: 10px;">Pay with M-Pesa</button>
+      <button class="btn btn-secondary" id="cancel-checkout" style="background: none; border: 1px solid var(--line-strong); color: var(--ink); width: 100%; padding: 12px; margin-top: 8px;">Back to Cart</button>
+      <div class="checkout-status"></div>
+    </div>
+    `
+  );
+  
+  // Handle Back to Cart
+  document.getElementById("cancel-checkout").addEventListener("click", () => {
+    document.querySelector(".checkout-form-container").remove();
+    items.forEach(el => el.style.display = "grid");
+    if (footer) footer.style.display = "flex";
+  });
+  
+  // Handle STK Push trigger
+  document.getElementById("trigger-stk-push").addEventListener("click", async () => {
+    const phoneInput = document.getElementById("checkout-phone");
+    const phone = phoneInput.value.trim();
+    const statusDiv = document.querySelector(".checkout-status");
+    const payBtn = document.getElementById("trigger-stk-push");
+    const cancelBtn = document.getElementById("cancel-checkout");
+    
+    if (!phone.match(/^2547\d{8}$/) && !phone.match(/^2541\d{8}$/)) {
+      statusDiv.className = "checkout-status error";
+      statusDiv.innerText = "Please enter a valid Safaricom number starting with 2547 or 2541 (12 digits total).";
+      return;
+    }
+    
+    payBtn.disabled = true;
+    cancelBtn.disabled = true;
+    payBtn.innerText = "Requesting STK Push...";
+    statusDiv.className = "checkout-status";
+    statusDiv.innerText = "Connecting to Safaricom Daraja API...";
+    
+    try {
+      // Use the first item in the cart for checkout
+      const response = await fetch("/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: phone,
+          product_id: cart[0].id
+        })
+      });
+      
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to trigger checkout");
+      }
+      
+      statusDiv.className = "checkout-status success";
+      statusDiv.innerText = "STK Push initiated! Please enter your M-Pesa PIN on your phone to complete the transaction.";
+      
+      // Clear cart
+      setTimeout(() => {
+        cart = [];
+        localStorage.removeItem("cart");
+        location.href = '/';
+      }, 5000);
+      
+    } catch (err) {
+      payBtn.disabled = false;
+      cancelBtn.disabled = false;
+      payBtn.innerText = "Pay with M-Pesa";
+      statusDiv.className = "checkout-status error";
+      statusDiv.innerText = "Error: " + err.message;
+    }
+  });
 }
 
 function saveCart() {

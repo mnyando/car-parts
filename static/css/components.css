@@ -83,6 +83,17 @@
 .cart-footer .btn:hover { opacity: 0.85; }
 .cart-footer .btn-danger { background: var(--ink); }
 
+/* --- Checkout Form --- */
+.checkout-form-container { display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md); }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field label { font-size: var(--fs-small); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--ink-muted); font-weight: 600; text-align: left; }
+.field input { width: 100%; padding: 16px; border: 1px solid var(--line-strong); border-radius: var(--radius); font-family: inherit; font-size: var(--fs-body); background: #fff; color: var(--ink); transition: border-color var(--dur-fast) var(--ease); }
+.field input:focus { border-color: var(--ink); outline: none; }
+.checkout-status { font-size: var(--fs-small); font-weight: 600; margin-top: 8px; line-height: 1.4; text-align: center; }
+.checkout-status.success { color: #2e7d32; }
+.checkout-status.error { color: #c62828; }
+
+
 
 
 
