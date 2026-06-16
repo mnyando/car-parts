@@ -21,6 +21,31 @@ const MAKES_AND_MODELS = {
   "Hyundai": ["Tucson", "Elantra", "Santa Fe"]
 };
 
+const BATTERY_VOLTAGES = {
+  "12v_45ah": {label: "12V 45Ah", modifier: -1500},
+  "12v_65ah": {label: "12V 65Ah", modifier: 0},
+  "12v_75ah": {label: "12V 75Ah", modifier: 1500},
+  "12v_90ah": {label: "12V 90Ah", modifier: 3500},
+  "24v_100ah": {label: "24V 100Ah", modifier: 7500}
+};
+
+const BATTERY_TYPES = {
+  "maintenance_free": {label: "Maintenance-Free (SLA)", modifier: 0},
+  "agm": {label: "AGM (Start-Stop)", modifier: 4000},
+  "efb": {label: "EFB", modifier: 2000}
+};
+
+const SPRING_TYPES = {
+  "standard_14mm": {label: "Standard Duty (14mm)", modifier: 0},
+  "heavy_duty_16mm": {label: "Heavy Duty (16mm)", modifier: 1500},
+  "lowered_12mm": {label: "Lowered / Sports (12mm)", modifier: 2500}
+};
+
+const SPRING_POSITIONS = {
+  "front": {label: "Front Axle", modifier: 0},
+  "rear": {label: "Rear Axle", modifier: -500}
+};
+
 let selectedBaseProduct = null;
 
 function renderInitialCart(){
@@ -47,23 +72,62 @@ addToCartButtonsDOM.forEach(addToCartButtonDOM => {
       price: formatPrice(productDOM.querySelector(".product-price").innerText)
     };
 
-    // Open vehicle selector modal
+    // Open specifications modal
     const vehicleModal = document.getElementById("vehicle-modal");
     if (vehicleModal) {
       vehicleModal.classList.add("is-open");
       vehicleModal.setAttribute("aria-hidden", "false");
       
-      // Reset dropdowns
-      const selectMake = document.getElementById("select-make");
-      const selectModel = document.getElementById("select-model");
+      const titleEl = document.getElementById("modal-title");
+      const descEl = document.getElementById("modal-desc");
       const previewDiv = document.getElementById("modal-price-preview");
       
-      if (selectMake) selectMake.value = "";
-      if (selectModel) {
-        selectModel.value = "";
-        selectModel.disabled = true;
-      }
+      const panelVehicle = document.getElementById("modal-fields-vehicle");
+      const panelBattery = document.getElementById("modal-fields-battery");
+      const panelSprings = document.getElementById("modal-fields-springs");
+      
       if (previewDiv) previewDiv.style.display = "none";
+      
+      if (productId === "p6") {
+        // Battery Spec Panel
+        if (titleEl) titleEl.innerText = "Select Battery Specifications";
+        if (descEl) descEl.innerText = "Select your desired voltage, capacity, and battery build standard.";
+        if (panelVehicle) panelVehicle.style.display = "none";
+        if (panelBattery) panelBattery.style.display = "block";
+        if (panelSprings) panelSprings.style.display = "none";
+        
+        const selectVolt = document.getElementById("select-battery-voltage");
+        const selectType = document.getElementById("select-battery-type");
+        if (selectVolt) selectVolt.value = "";
+        if (selectType) selectType.value = "";
+      } else if (productId === "p7") {
+        // Coil Springs Spec Panel
+        if (titleEl) titleEl.innerText = "Select Coil Spring Specifications";
+        if (descEl) descEl.innerText = "Select the spring wire thickness duty and axle installation position.";
+        if (panelVehicle) panelVehicle.style.display = "none";
+        if (panelBattery) panelBattery.style.display = "none";
+        if (panelSprings) panelSprings.style.display = "block";
+        
+        const selectSpringType = document.getElementById("select-springs-type");
+        const selectSpringPos = document.getElementById("select-springs-position");
+        if (selectSpringType) selectSpringType.value = "";
+        if (selectSpringPos) selectSpringPos.value = "";
+      } else {
+        // Standard Vehicle Panel
+        if (titleEl) titleEl.innerText = "Select Your Vehicle";
+        if (descEl) descEl.innerText = "Select your car make and model to match the exact compatible part for your vehicle.";
+        if (panelVehicle) panelVehicle.style.display = "block";
+        if (panelBattery) panelBattery.style.display = "none";
+        if (panelSprings) panelSprings.style.display = "none";
+        
+        const selectMake = document.getElementById("select-make");
+        const selectModel = document.getElementById("select-model");
+        if (selectMake) selectMake.value = "";
+        if (selectModel) {
+          selectModel.value = "";
+          selectModel.disabled = true;
+        }
+      }
     }
   });
 });
@@ -301,6 +365,13 @@ function saveCart() {
 function initVehicleModal() {
   const selectMake = document.getElementById("select-make");
   const selectModel = document.getElementById("select-model");
+  
+  const selectVolt = document.getElementById("select-battery-voltage");
+  const selectBatType = document.getElementById("select-battery-type");
+  
+  const selectSpringType = document.getElementById("select-springs-type");
+  const selectSpringPos = document.getElementById("select-springs-position");
+  
   const closeBtn = document.getElementById("close-vehicle-modal");
   const confirmBtn = document.getElementById("confirm-vehicle");
   const vehicleModal = document.getElementById("vehicle-modal");
@@ -334,6 +405,14 @@ function initVehicleModal() {
   });
 
   selectModel.addEventListener("change", updatePricePreview);
+  
+  // Battery change listeners
+  selectVolt.addEventListener("change", updatePricePreview);
+  selectBatType.addEventListener("change", updatePricePreview);
+  
+  // Springs change listeners
+  selectSpringType.addEventListener("change", updatePricePreview);
+  selectSpringPos.addEventListener("change", updatePricePreview);
 
   closeBtn?.addEventListener("click", () => {
     vehicleModal.classList.remove("is-open");
@@ -341,26 +420,52 @@ function initVehicleModal() {
   });
 
   confirmBtn?.addEventListener("click", () => {
-    const make = selectMake.value;
-    const model = selectModel.value;
-    if (!make || !model) {
-      alert("Please select both Make and Model!");
-      return;
-    }
-
-    // Generate specific ID
-    const specId = `${selectedBaseProduct.id}_${make.toLowerCase()}_${model.toLowerCase().replace(/ /g, '_').replace(/-/g, '_')}`;
-    const specName = `${make} ${model} ${selectedBaseProduct.name}`;
-    
-    // Calculate price modifier
+    let specId = "";
+    let specName = "";
     let priceModifier = 0;
-    if (make === "Mercedes-Benz" || make === "BMW") {
-      priceModifier = 2500;
-    } else if (make === "Toyota" || make === "Subaru") {
-      priceModifier = 400;
-    } else if (make === "Nissan" || make === "Mazda") {
-      priceModifier = -200;
+    
+    if (selectedBaseProduct.id === "p6") {
+      // Battery confirmation
+      const volt = selectVolt.value;
+      const type = selectBatType.value;
+      if (!volt || !type) {
+        alert("Please select both Battery Voltage/Capacity and Type!");
+        return;
+      }
+      specId = `p6_${volt}_${type}`;
+      specName = `${BATTERY_TYPES[type].label} Battery (${BATTERY_VOLTAGES[volt].label})`;
+      priceModifier = BATTERY_VOLTAGES[volt].modifier + BATTERY_TYPES[type].modifier;
+    } else if (selectedBaseProduct.id === "p7") {
+      // Springs confirmation
+      const stype = selectSpringType.value;
+      const pos = selectSpringPos.value;
+      if (!stype || !pos) {
+        alert("Please select both Spring Type/Thickness and Position!");
+        return;
+      }
+      specId = `p7_${stype}_${pos}`;
+      specName = `${SPRING_TYPES[stype].label} Coil Springs (${SPRING_POSITIONS[pos].label})`;
+      priceModifier = SPRING_TYPES[stype].modifier + SPRING_POSITIONS[pos].modifier;
+    } else {
+      // Vehicle confirmation
+      const make = selectMake.value;
+      const model = selectModel.value;
+      if (!make || !model) {
+        alert("Please select both Make and Model!");
+        return;
+      }
+      specId = `${selectedBaseProduct.id}_${make.toLowerCase()}_${model.toLowerCase().replace(/ /g, '_').replace(/-/g, '_')}`;
+      specName = `${make} ${model} ${selectedBaseProduct.name}`;
+      
+      if (make === "Mercedes-Benz" || make === "BMW") {
+        priceModifier = 2500;
+      } else if (make === "Toyota" || make === "Subaru") {
+        priceModifier = 400;
+      } else if (make === "Nissan" || make === "Mazda") {
+        priceModifier = -200;
+      }
     }
+    
     const specPrice = selectedBaseProduct.price + priceModifier;
 
     const product = {
@@ -398,22 +503,42 @@ function initVehicleModal() {
 }
 
 function updatePricePreview() {
-  const selectMake = document.getElementById("select-make");
-  const selectModel = document.getElementById("select-model");
   const previewDiv = document.getElementById("modal-price-preview");
-  if (!selectMake || !previewDiv) return;
+  if (!previewDiv || !selectedBaseProduct) return;
 
-  const make = selectMake.value;
-  const model = selectModel.value;
-  if (make && model && selectedBaseProduct) {
-    let priceModifier = 0;
-    if (make === "Mercedes-Benz" || make === "BMW") {
-      priceModifier = 2500;
-    } else if (make === "Toyota" || make === "Subaru") {
-      priceModifier = 400;
-    } else if (make === "Nissan" || make === "Mazda") {
-      priceModifier = -200;
+  let priceModifier = 0;
+  let isValid = false;
+
+  if (selectedBaseProduct.id === "p6") {
+    const volt = document.getElementById("select-battery-voltage").value;
+    const type = document.getElementById("select-battery-type").value;
+    if (volt && type) {
+      priceModifier = BATTERY_VOLTAGES[volt].modifier + BATTERY_TYPES[type].modifier;
+      isValid = true;
     }
+  } else if (selectedBaseProduct.id === "p7") {
+    const stype = document.getElementById("select-springs-type").value;
+    const pos = document.getElementById("select-springs-position").value;
+    if (stype && pos) {
+      priceModifier = SPRING_TYPES[stype].modifier + SPRING_POSITIONS[pos].modifier;
+      isValid = true;
+    }
+  } else {
+    const make = document.getElementById("select-make").value;
+    const model = document.getElementById("select-model").value;
+    if (make && model) {
+      if (make === "Mercedes-Benz" || make === "BMW") {
+        priceModifier = 2500;
+      } else if (make === "Toyota" || make === "Subaru") {
+        priceModifier = 400;
+      } else if (make === "Nissan" || make === "Mazda") {
+        priceModifier = -200;
+      }
+      isValid = true;
+    }
+  }
+
+  if (isValid) {
     const finalPrice = selectedBaseProduct.price + priceModifier;
     previewDiv.innerText = `Price: KSh ${finalPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     previewDiv.style.display = "block";

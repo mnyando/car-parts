@@ -72,5 +72,7 @@ class MpesaClient:
             "TransactionDesc": transaction_desc
         }
         r = requests.post(url, json=payload, headers=headers)
+        if r.status_code >= 400:
+            print(f"Safaricom STK Push failed with status {r.status_code}: {r.text}", flush=True)
         r.raise_for_status()
         return r.json()

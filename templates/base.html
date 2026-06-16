@@ -41,23 +41,73 @@
     <div class="modal-overlay" id="vehicle-modal" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-header">
-          <h3>Select Your Vehicle</h3>
+          <h3 id="modal-title">Select Your Vehicle</h3>
           <button class="modal-close" id="close-vehicle-modal" aria-label="Close modal">&times;</button>
         </div>
         <div class="modal-body">
-          <p class="modal-description">Select your car make and model to match the exact compatible part for your vehicle.</p>
-          <div class="field">
-            <label for="select-make">Make / Manufacturer</label>
-            <select id="select-make">
-              <option value="">-- Choose Make --</option>
-            </select>
+          <p class="modal-description" id="modal-desc">Select your car make and model to match the exact compatible part for your vehicle.</p>
+          
+          <!-- Vehicle specific fields (Brake Pad, Air Filter, etc.) -->
+          <div id="modal-fields-vehicle">
+            <div class="field">
+              <label for="select-make">Make / Manufacturer</label>
+              <select id="select-make">
+                <option value="">-- Choose Make --</option>
+              </select>
+            </div>
+            <div class="field" style="margin-top: var(--space-sm);">
+              <label for="select-model">Model</label>
+              <select id="select-model" disabled>
+                <option value="">-- Choose Model --</option>
+              </select>
+            </div>
           </div>
-          <div class="field" style="margin-top: var(--space-sm);">
-            <label for="select-model">Model</label>
-            <select id="select-model" disabled>
-              <option value="">-- Choose Model --</option>
-            </select>
+
+          <!-- Battery specific fields (Voltage & Battery Type) -->
+          <div id="modal-fields-battery" style="display: none;">
+            <div class="field">
+              <label for="select-battery-voltage">Voltage / Capacity</label>
+              <select id="select-battery-voltage">
+                <option value="">-- Choose Voltage & Capacity --</option>
+                <option value="12v_45ah">12V 45Ah (Small Hatchback)</option>
+                <option value="12v_65ah">12V 65Ah (Medium Sedan)</option>
+                <option value="12v_75ah">12V 75Ah (SUV / Crossover)</option>
+                <option value="12v_90ah">12V 90Ah (Large SUV / Diesel)</option>
+                <option value="24v_100ah">24V 100Ah (Commercial Truck)</option>
+              </select>
+            </div>
+            <div class="field" style="margin-top: var(--space-sm);">
+              <label for="select-battery-type">Battery Type</label>
+              <select id="select-battery-type">
+                <option value="">-- Choose Battery Type --</option>
+                <option value="maintenance_free">Maintenance-Free (SLA)</option>
+                <option value="agm">AGM (Start-Stop / Premium)</option>
+                <option value="efb">EFB (Enhanced Flooded)</option>
+              </select>
+            </div>
           </div>
+
+          <!-- Coil Springs specific fields (Thickness & Position) -->
+          <div id="modal-fields-springs" style="display: none;">
+            <div class="field">
+              <label for="select-springs-type">Spring Type / Thickness</label>
+              <select id="select-springs-type">
+                <option value="">-- Choose Type & Wire Thickness --</option>
+                <option value="standard_14mm">Standard Duty (14mm wire)</option>
+                <option value="heavy_duty_16mm">Heavy Duty (16mm wire - Load Carrying)</option>
+                <option value="lowered_12mm">Lowered / Sports (12mm wire - Performance)</option>
+              </select>
+            </div>
+            <div class="field" style="margin-top: var(--space-sm);">
+              <label for="select-springs-position">Position / Axle</label>
+              <select id="select-springs-position">
+                <option value="">-- Choose Position --</option>
+                <option value="front">Front Axle (Pair)</option>
+                <option value="rear">Rear Axle (Pair)</option>
+              </select>
+            </div>
+          </div>
+
           <div class="modal-price-preview" id="modal-price-preview" style="margin-top: var(--space-sm); font-weight: 600; font-size: var(--fs-lead); text-align: right; display: none;"></div>
         </div>
         <div class="modal-footer" style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">

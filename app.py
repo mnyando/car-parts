@@ -82,6 +82,31 @@ MAKES_AND_MODELS = {
     "Hyundai": ["Tucson", "Elantra", "Santa Fe"]
 }
 
+BATTERY_VOLTAGES = {
+    "12v_45ah": {"label": "12V 45Ah", "modifier": -1500.00},
+    "12v_65ah": {"label": "12V 65Ah", "modifier": 0.00},
+    "12v_75ah": {"label": "12V 75Ah", "modifier": 1500.00},
+    "12v_90ah": {"label": "12V 90Ah", "modifier": 3500.00},
+    "24v_100ah": {"label": "24V 100Ah", "modifier": 7500.00}
+}
+
+BATTERY_TYPES = {
+    "maintenance_free": {"label": "Maintenance-Free (SLA)", "modifier": 0.00},
+    "agm": {"label": "AGM (Start-Stop)", "modifier": 4000.00},
+    "efb": {"label": "EFB", "modifier": 2000.00}
+}
+
+SPRING_TYPES = {
+    "standard_14mm": {"label": "Standard Duty (14mm)", "modifier": 0.00},
+    "heavy_duty_16mm": {"label": "Heavy Duty (16mm)", "modifier": 1500.00},
+    "lowered_12mm": {"label": "Lowered / Sports (12mm)", "modifier": 2500.00}
+}
+
+SPRING_POSITIONS = {
+    "front": {"label": "Front Axle", "modifier": 0.00},
+    "rear": {"label": "Rear Axle", "modifier": -500.00}
+}
+
 BASE_PRODUCTS = [
     {"id": "p1", "name": "Brake Pad", "price": 3500.00, "image": "brakepad.jpg"},
     {"id": "p2", "name": "Air Filter", "price": 2200.00, "image": "air_filter.jpg"},
@@ -99,26 +124,51 @@ for bp in BASE_PRODUCTS:
 
 # Dynamically register compatibility versions
 for bp in BASE_PRODUCTS:
-    for make, models in MAKES_AND_MODELS.items():
-        for model in models:
-            specific_id = f"{bp['id']}_{make.lower()}_{model.lower().replace(' ', '_').replace('-', '_')}"
-            specific_name = f"{make} {model} {bp['name']}"
-            
-            # Specific price adjustments based on brand
-            price_modifier = 0
-            if make in ["Mercedes-Benz", "BMW"]:
-                price_modifier = 2500
-            elif make in ["Toyota", "Subaru"]:
-                price_modifier = 400
-            elif make in ["Nissan", "Mazda"]:
-                price_modifier = -200
+    if bp["id"] == "p6": # Car Battery
+        for v_key, v_info in BATTERY_VOLTAGES.items():
+            for t_key, t_info in BATTERY_TYPES.items():
+                specific_id = f"p6_{v_key}_{t_key}"
+                specific_name = f"{t_info['label']} Battery ({v_info['label']})"
+                price = bp["price"] + v_info["modifier"] + t_info["modifier"]
+                PRODUCTS.append({
+                    "id": specific_id,
+                    "name": specific_name,
+                    "price": price,
+                    "image": bp["image"]
+                })
+    elif bp["id"] == "p7": # Coil Springs
+        for t_key, t_info in SPRING_TYPES.items():
+            for p_key, p_info in SPRING_POSITIONS.items():
+                specific_id = f"p7_{t_key}_{p_key}"
+                specific_name = f"{t_info['label']} Coil Springs ({p_info['label']})"
+                price = bp["price"] + t_info["modifier"] + p_info["modifier"]
+                PRODUCTS.append({
+                    "id": specific_id,
+                    "name": specific_name,
+                    "price": price,
+                    "image": bp["image"]
+                })
+    else: # Vehicle-specific (p1, p2, p3, p4, p5)
+        for make, models in MAKES_AND_MODELS.items():
+            for model in models:
+                specific_id = f"{bp['id']}_{make.lower()}_{model.lower().replace(' ', '_').replace('-', '_')}"
+                specific_name = f"{make} {model} {bp['name']}"
                 
-            PRODUCTS.append({
-                "id": specific_id,
-                "name": specific_name,
-                "price": bp["price"] + price_modifier,
-                "image": bp["image"]
-            })
+                # Specific price adjustments based on brand
+                price_modifier = 0
+                if make in ["Mercedes-Benz", "BMW"]:
+                    price_modifier = 2500
+                elif make in ["Toyota", "Subaru"]:
+                    price_modifier = 400
+                elif make in ["Nissan", "Mazda"]:
+                    price_modifier = -200
+                    
+                PRODUCTS.append({
+                    "id": specific_id,
+                    "name": specific_name,
+                    "price": bp["price"] + price_modifier,
+                    "image": bp["image"]
+                })
 
 @app.route('/')
 def index():
