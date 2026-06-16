@@ -55,7 +55,7 @@ function insertItemToDOM(product) {
     "beforeend",
     `
     <div class="cart-item">
-        <img class="cart-item-image" src="${product.image}" alt="${product.name}" />
+        <img class="cart-item-image" src="${product.image}" alt="${product.name}" loading="lazy" decoding="async" />
         <!-- store product id on the DOM for later reference -->
         <input type="hidden" class="cart-item-id" value="${product.id || ''}" />
         <h2 class="cart-item-name">${product.name}</h2>
@@ -161,9 +161,17 @@ function clearCart() {
 
 function countCartTotal() {
   let cartTotal = 0;
-  cart.forEach(cartItem => (cartTotal += cartItem.quantity * parseFloat(cartItem.price)));
+  let itemCount = 0;
+  cart.forEach(cartItem => {
+    cartTotal += cartItem.quantity * parseFloat(cartItem.price);
+    itemCount += cartItem.quantity;
+  });
   if (document.querySelector('[data-action="total-price"]')) {
     document.querySelector('[data-action="total-price"]').innerText = `${cartTotal.toFixed(2)}`;
+  }
+  const cartCountDOM = document.querySelector('[data-cart-count]');
+  if (cartCountDOM) {
+    cartCountDOM.innerText = itemCount;
   }
 }
 
