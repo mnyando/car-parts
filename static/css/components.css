@@ -93,6 +93,11 @@
 .checkout-status.success { color: #2e7d32; }
 .checkout-status.error { color: #c62828; }
 
+/* --- Scroll Reveal --- */
+[data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+[data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+
+
 
 
 
