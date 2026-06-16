@@ -1,6 +1,6 @@
 # Car Parts Store
 
-A premium, minimalist e-commerce storefront for car parts, redesigned to match the high-end **Weichie.com** aesthetic (stark white, off-black type, neo-grotesque Inter font, oversized statement typography, two-column responsive image grids, and slide-out drawers).
+A premium, minimalist e-commerce storefront for car parts
 
 ## Stack
 
