@@ -15,6 +15,17 @@
     {% block head %}{% endblock %}
   </head>
   <body>
+    <nav class="drawer" data-menu aria-hidden="true">
+      <button class="drawer__close" data-menu-close aria-label="Close menu">Close</button>
+      <ul class="drawer__list">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('catalog') }}">Shop parts</a></li>
+        <li><a href="{{ url_for('cart') }}">Cart</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+      <div class="drawer__foot"><span>Nairobi</span><span>+254 700 000 000</span></div>
+    </nav>
+
     {% block content %}{% endblock %}
     {% include 'footer.html' %}
 

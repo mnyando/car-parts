@@ -12,3 +12,14 @@
 .hdr__burger { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 5px; padding: 6px; }
 .hdr__burger span { width: 26px; height: 2px; background: #fff; display: block; transition: transform var(--dur-fast) var(--ease); }
 
+/* --- Drawer Nav --- */
+.drawer { position: fixed; inset: 0; z-index: 70; background: var(--overlay); color: #fff; display: flex; flex-direction: column; justify-content: center; padding: var(--gutter); transform: translateY(-100%); transition: transform var(--dur) var(--ease); }
+.drawer.is-open { transform: translateY(0); }
+.drawer__close { position: absolute; top: 24px; right: var(--gutter); background: none; border: none; color: #fff; cursor: pointer; font-size: var(--fs-small); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
+.drawer__list { list-style: none; margin: 0; padding: 0; }
+.drawer__list li { margin-bottom: 20px; }
+.drawer__list a { font-size: var(--fs-hero); font-weight: 600; letter-spacing: var(--tracking-tight); line-height: 1.05; display: inline-block; transition: opacity var(--dur-fast) var(--ease); }
+.drawer__list a:hover { opacity: 0.45; }
+.drawer__foot { position: absolute; bottom: 28px; left: var(--gutter); right: var(--gutter); display: flex; justify-content: space-between; color: var(--ink-muted); font-size: var(--fs-small); }
+
+
