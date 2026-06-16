@@ -29,5 +29,13 @@
 .ftr__col p { color: #fff; font-size: var(--fs-body); margin: 0 0 6px; }
 .ftr__legal { max-width: var(--container); margin: var(--space-lg) auto 0; display: flex; justify-content: space-between; font-size: var(--fs-small); color: var(--ink-muted); border-top: 1px solid rgba(255,255,255,0.15); padding-top: 20px; }
 
+/* --- Hero Section --- */
+.hero { padding-top: calc(var(--section) + 60px); }
+.hero__title { font-size: var(--fs-hero); margin-bottom: var(--space-md); }
+.hero__lead { font-size: var(--fs-lead); color: var(--ink-muted); max-width: 46ch; margin-bottom: var(--space-md); }
+.hero__cta { display: inline-block; font-size: var(--fs-lead); border-bottom: 2px solid var(--ink); padding-bottom: 4px; transition: opacity var(--dur-fast) var(--ease); }
+.hero__cta:hover { opacity: 0.5; }
+
+
 
 
