@@ -26,6 +26,17 @@
       <div class="drawer__foot"><span>Nairobi</span><span>+254 700 000 000</span></div>
     </nav>
 
+    <div class="cart-drawer" data-cart aria-hidden="true">
+      <div class="cart-drawer__scrim" data-cart-close></div>
+      <div class="cart-drawer__panel">
+        <div class="cart-drawer__head">
+          <h3>Your Cart</h3>
+          <button class="cart-drawer__close" data-cart-close aria-label="Close cart">Close</button>
+        </div>
+        <div class="cart"></div>
+      </div>
+    </div>
+
     {% block content %}{% endblock %}
     {% include 'footer.html' %}
 
