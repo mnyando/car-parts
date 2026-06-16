@@ -69,12 +69,56 @@ mp = MpesaClient(
     passkey=os.getenv("MPESA_PASSKEY")
 )
 
-# Simple in-memory product list for demo
-PRODUCTS = [
-    {"id": "p1", "name": "Brake Pad", "price": 25.00},
-    {"id": "p2", "name": "Air Filter", "price": 15.50},
-    {"id": "p3", "name": "Oil Filter", "price": 12.75},
+MAKES_AND_MODELS = {
+    "Toyota": ["Vitz", "Fielder", "Corolla", "Harrier", "Land Cruiser", "Probox"],
+    "Nissan": ["X-Trail", "Note", "Sylphy", "Wingroad"],
+    "Subaru": ["Impreza", "Forester", "Legacy"],
+    "Honda": ["Fit", "Civic", "CR-V"],
+    "Mazda": ["Demio", "Axela", "CX-5"],
+    "Mitsubishi": ["Outlander", "Lancer", "Pajero"],
+    "Volkswagen": ["Golf", "Tiguan", "Polo", "Passat"],
+    "Mercedes-Benz": ["C-Class", "E-Class", "GLC"],
+    "BMW": ["3 Series", "5 Series", "X3", "X5"],
+    "Hyundai": ["Tucson", "Elantra", "Santa Fe"]
+}
+
+BASE_PRODUCTS = [
+    {"id": "p1", "name": "Brake Pad", "price": 3500.00, "image": "brakepad.jpg"},
+    {"id": "p2", "name": "Air Filter", "price": 2200.00, "image": "air_filter.jpg"},
+    {"id": "p3", "name": "Castrol Motor Oil", "price": 4500.00, "image": "motor_oil.jpg"},
+    {"id": "p4", "name": "Car Wheel", "price": 12000.00, "image": "wheel.jpg"},
+    {"id": "p5", "name": "Side Mirror", "price": 3200.00, "image": "side_mirror.jpg"},
+    {"id": "p6", "name": "Car Battery", "price": 9500.00, "image": "battery.jpg"},
+    {"id": "p7", "name": "Coil Springs", "price": 6000.00, "image": "springs.jpg"},
 ]
+
+PRODUCTS = []
+# Add base generic products
+for bp in BASE_PRODUCTS:
+    PRODUCTS.append(bp)
+
+# Dynamically register compatibility versions
+for bp in BASE_PRODUCTS:
+    for make, models in MAKES_AND_MODELS.items():
+        for model in models:
+            specific_id = f"{bp['id']}_{make.lower()}_{model.lower().replace(' ', '_').replace('-', '_')}"
+            specific_name = f"{make} {model} {bp['name']}"
+            
+            # Specific price adjustments based on brand
+            price_modifier = 0
+            if make in ["Mercedes-Benz", "BMW"]:
+                price_modifier = 2500
+            elif make in ["Toyota", "Subaru"]:
+                price_modifier = 400
+            elif make in ["Nissan", "Mazda"]:
+                price_modifier = -200
+                
+            PRODUCTS.append({
+                "id": specific_id,
+                "name": specific_name,
+                "price": bp["price"] + price_modifier,
+                "image": bp["image"]
+            })
 
 @app.route('/')
 def index():
@@ -83,7 +127,7 @@ def index():
 
 @app.route('/catalog')
 def catalog():
-    return render_template('catalog.html', products=PRODUCTS)
+    return render_template('catalog.html', products=BASE_PRODUCTS)
 
 
 @app.route('/cart')

@@ -70,7 +70,7 @@
 .cart-item-image { width: 80px; height: 60px; object-fit: cover; background: #f3f3f3; }
 .cart-item-name { font-size: var(--fs-body); font-weight: 600; margin: 0; color: var(--ink); }
 .cart-item-price { font-size: var(--fs-small); color: var(--ink-muted); font-variant-numeric: tabular-nums; margin: 0 0 6px; }
-.cart-item-price::before { content: "$"; }
+.cart-item-price::before { content: "KSh "; }
 .cart-item .btn { background: none; border: 1px solid var(--line-strong); color: var(--ink); padding: 4px 8px; cursor: pointer; font-size: var(--fs-small); font-weight: 600; font-family: inherit; }
 .cart-item .btn:hover { background: var(--line); }
 .cart-item-quantity { font-size: var(--fs-small); font-weight: 600; margin: 0 4px; display: inline-block; }
@@ -78,7 +78,7 @@
 /* --- Cart Footer (Dynamic) --- */
 .cart-footer { margin-top: auto; border-top: 1px solid var(--line); padding-top: var(--space-sm); display: flex; flex-direction: column; gap: var(--space-xs); }
 .cart-footer-total { font-size: var(--fs-h2); font-weight: 600; color: var(--ink); margin-bottom: var(--space-xs); font-variant-numeric: tabular-nums; margin-top: 0; }
-.cart-footer-total::before { content: "Total: $"; }
+.cart-footer-total::before { content: "Total: KSh "; }
 .cart-footer .btn { width: 100%; background: var(--ink); color: #fff; border: none; padding: 16px; font: inherit; font-size: var(--fs-small); font-weight: 600; text-transform: uppercase; letter-spacing: var(--tracking-wide); cursor: pointer; transition: opacity var(--dur-fast) var(--ease); }
 .cart-footer .btn:hover { opacity: 0.85; }
 .cart-footer .btn-danger { background: var(--ink); }
@@ -102,6 +102,108 @@
 
 /* --- Flash Messages & Alerts --- */
 .alert, .flash-message { padding: 16px; border: 1px solid var(--ink); background: #fff; color: var(--ink); margin-bottom: var(--space-md); font-size: var(--fs-small); font-weight: 500; border-radius: var(--radius); }
+
+/* --- Vehicle Compatibility Modal --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(10, 10, 10, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+.modal-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-dialog {
+  background: #ffffff;
+  border: 1px solid var(--ink);
+  width: min(480px, calc(100% - 40px));
+  padding: var(--space-md);
+  transform: translateY(20px);
+  transition: transform var(--dur) var(--ease);
+}
+.modal-overlay.is-open .modal-dialog {
+  transform: translateY(0);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+.modal-header h3 {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-flat);
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0 var(--space-xs);
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.modal-close:hover {
+  opacity: 0.5;
+}
+.modal-body {
+  margin-bottom: var(--space-md);
+}
+.modal-description {
+  font-size: var(--fs-small);
+  color: var(--ink-muted);
+  margin-bottom: var(--space-sm);
+}
+.modal-body select {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  background: #ffffff;
+  color: var(--ink);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111111' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.modal-body select:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+.modal-body select:disabled {
+  background: var(--line);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.modal-price-preview {
+  margin-top: var(--space-sm);
+  font-weight: 600;
+  font-size: var(--fs-lead);
+  text-align: right;
+  color: var(--ink);
+}
+
 
 
 

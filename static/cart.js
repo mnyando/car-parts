@@ -8,43 +8,62 @@ function formatPrice(priceStr){
   return parseFloat(priceStr.replace(/[^0-9.\.]/g, '')) || 0;
 }
 
+const MAKES_AND_MODELS = {
+  "Toyota": ["Vitz", "Fielder", "Corolla", "Harrier", "Land Cruiser", "Probox"],
+  "Nissan": ["X-Trail", "Note", "Sylphy", "Wingroad"],
+  "Subaru": ["Impreza", "Forester", "Legacy"],
+  "Honda": ["Fit", "Civic", "CR-V"],
+  "Mazda": ["Demio", "Axela", "CX-5"],
+  "Mitsubishi": ["Outlander", "Lancer", "Pajero"],
+  "Volkswagen": ["Golf", "Tiguan", "Polo", "Passat"],
+  "Mercedes-Benz": ["C-Class", "E-Class", "GLC"],
+  "BMW": ["3 Series", "5 Series", "X3", "X5"],
+  "Hyundai": ["Tucson", "Elantra", "Santa Fe"]
+};
+
+let selectedBaseProduct = null;
+
 function renderInitialCart(){
   if (cart.length > 0) {
     cart.forEach(cartItem => {
       insertItemToDOM(cartItem);
       countCartTotal();
-      // mark buttons as in-cart
-      addToCartButtonsDOM.forEach(addToCartButtonDOM => {
-        const pid = addToCartButtonDOM.getAttribute('data-product-id');
-        // prefer id matching, fallback to name matching for older stored carts
-        if ((cartItem.id && pid && cartItem.id === pid) || (!cartItem.id && productMatchesByName(addToCartButtonDOM, cartItem.name))) {
-          handleActionButtons(addToCartButtonDOM, cartItem);
-        }
-      });
+      wireCartItemListeners(cartItem);
     });
   }
 }
 
+// Set up the generic catalog add-to-cart triggers
 addToCartButtonsDOM.forEach(addToCartButtonDOM => {
   addToCartButtonDOM.addEventListener("click", () => {
     const productDOM = addToCartButtonDOM.parentNode;
     const productId = addToCartButtonDOM.getAttribute('data-product-id') || null;
-    const product = {
+    
+    selectedBaseProduct = {
+      button: addToCartButtonDOM,
       id: productId,
       image: productDOM.querySelector(".product-image").getAttribute("src"),
       name: productDOM.querySelector(".product-name").innerText,
-      price: formatPrice(productDOM.querySelector(".product-price").innerText),
-      quantity: 1
+      price: formatPrice(productDOM.querySelector(".product-price").innerText)
     };
 
-    // prefer id-based matching; fallback to name
-    const isInCart = product.id ? cart.some(ci => ci.id === product.id) : cart.some(ci => ci.name === product.name);
-
-    if (!isInCart) {
-      insertItemToDOM(product);
-      cart.push(product);
-      saveCart();
-      handleActionButtons(addToCartButtonDOM, product);
+    // Open vehicle selector modal
+    const vehicleModal = document.getElementById("vehicle-modal");
+    if (vehicleModal) {
+      vehicleModal.classList.add("is-open");
+      vehicleModal.setAttribute("aria-hidden", "false");
+      
+      // Reset dropdowns
+      const selectMake = document.getElementById("select-make");
+      const selectModel = document.getElementById("select-model");
+      const previewDiv = document.getElementById("modal-price-preview");
+      
+      if (selectMake) selectMake.value = "";
+      if (selectModel) {
+        selectModel.value = "";
+        selectModel.disabled = true;
+      }
+      if (previewDiv) previewDiv.style.display = "none";
     }
   });
 });
@@ -71,21 +90,19 @@ function insertItemToDOM(product) {
   addCartFooter();
 }
 
-function handleActionButtons(addToCartButtonDOM, product) {
-  addToCartButtonDOM.innerText = "In Cart";
-  addToCartButtonDOM.disabled = true;
-
+function wireCartItemListeners(product) {
   const cartItemsDOM = document.querySelectorAll(".cart-item");
   cartItemsDOM.forEach(cartItemDOM => {
-    // match by hidden id first, fallback to name
     const domIdInput = cartItemDOM.querySelector('.cart-item-id');
     const domId = domIdInput ? domIdInput.value : null;
-    const domName = cartItemDOM.querySelector('.cart-item-name').innerText;
-    const matches = (product.id && domId && product.id === domId) || (!product.id && domName === product.name) || (product.name === domName);
-    if (matches) {
-      cartItemDOM.querySelector('[data-action="increase-item"]').addEventListener("click", () => increaseItem(product, cartItemDOM));
-      cartItemDOM.querySelector('[data-action="decrease-item"]').addEventListener("click", () => decreaseItem(product, cartItemDOM, addToCartButtonDOM));
-      cartItemDOM.querySelector('[data-action="remove-item"]').addEventListener("click", () => removeItem(product, cartItemDOM, addToCartButtonDOM));
+    if (domId && domId === product.id) {
+      const incBtn = cartItemDOM.querySelector('[data-action="increase-item"]');
+      const decBtn = cartItemDOM.querySelector('[data-action="decrease-item"]');
+      const remBtn = cartItemDOM.querySelector('[data-action="remove-item"]');
+      
+      incBtn?.addEventListener("click", () => increaseItem(product, cartItemDOM));
+      decBtn?.addEventListener("click", () => decreaseItem(product, cartItemDOM, null));
+      remBtn?.addEventListener("click", () => removeItem(product, cartItemDOM, null));
     }
   });
 }
@@ -280,8 +297,134 @@ function saveCart() {
   countCartTotal();
 }
 
+// Populate Makes dropdown on load & bind modal events
+function initVehicleModal() {
+  const selectMake = document.getElementById("select-make");
+  const selectModel = document.getElementById("select-model");
+  const closeBtn = document.getElementById("close-vehicle-modal");
+  const confirmBtn = document.getElementById("confirm-vehicle");
+  const vehicleModal = document.getElementById("vehicle-modal");
+  
+  if (!selectMake) return; // not on catalog page
+
+  // Clear and add placeholder
+  selectMake.innerHTML = '<option value="">-- Choose Make --</option>';
+  Object.keys(MAKES_AND_MODELS).forEach(make => {
+    const opt = document.createElement("option");
+    opt.value = make;
+    opt.innerText = make;
+    selectMake.appendChild(opt);
+  });
+
+  selectMake.addEventListener("change", () => {
+    const make = selectMake.value;
+    selectModel.innerHTML = '<option value="">-- Choose Model --</option>';
+    if (make) {
+      selectModel.disabled = false;
+      MAKES_AND_MODELS[make].forEach(model => {
+        const opt = document.createElement("option");
+        opt.value = model;
+        opt.innerText = model;
+        selectModel.appendChild(opt);
+      });
+    } else {
+      selectModel.disabled = true;
+    }
+    updatePricePreview();
+  });
+
+  selectModel.addEventListener("change", updatePricePreview);
+
+  closeBtn?.addEventListener("click", () => {
+    vehicleModal.classList.remove("is-open");
+    vehicleModal.setAttribute("aria-hidden", "true");
+  });
+
+  confirmBtn?.addEventListener("click", () => {
+    const make = selectMake.value;
+    const model = selectModel.value;
+    if (!make || !model) {
+      alert("Please select both Make and Model!");
+      return;
+    }
+
+    // Generate specific ID
+    const specId = `${selectedBaseProduct.id}_${make.toLowerCase()}_${model.toLowerCase().replace(/ /g, '_').replace(/-/g, '_')}`;
+    const specName = `${make} ${model} ${selectedBaseProduct.name}`;
+    
+    // Calculate price modifier
+    let priceModifier = 0;
+    if (make === "Mercedes-Benz" || make === "BMW") {
+      priceModifier = 2500;
+    } else if (make === "Toyota" || make === "Subaru") {
+      priceModifier = 400;
+    } else if (make === "Nissan" || make === "Mazda") {
+      priceModifier = -200;
+    }
+    const specPrice = selectedBaseProduct.price + priceModifier;
+
+    const product = {
+      id: specId,
+      image: selectedBaseProduct.image,
+      name: specName,
+      price: specPrice,
+      quantity: 1
+    };
+
+    // Add to cart
+    const existingIndex = cart.findIndex(ci => ci.id === product.id);
+    if (existingIndex !== -1) {
+      cart[existingIndex].quantity += 1;
+      const cartItemsDOM = document.querySelectorAll(".cart-item");
+      cartItemsDOM.forEach(cartItemDOM => {
+        const idInput = cartItemDOM.querySelector('.cart-item-id');
+        if (idInput && idInput.value === product.id) {
+          cartItemDOM.querySelector('.cart-item-quantity').innerText = cart[existingIndex].quantity;
+        }
+      });
+      saveCart();
+    } else {
+      insertItemToDOM(product);
+      cart.push(product);
+      saveCart();
+      wireCartItemListeners(product);
+    }
+
+    // Close modal & open cart drawer
+    vehicleModal.classList.remove("is-open");
+    vehicleModal.setAttribute("aria-hidden", "true");
+    document.querySelector(".cart-drawer")?.classList.add("is-open");
+  });
+}
+
+function updatePricePreview() {
+  const selectMake = document.getElementById("select-make");
+  const selectModel = document.getElementById("select-model");
+  const previewDiv = document.getElementById("modal-price-preview");
+  if (!selectMake || !previewDiv) return;
+
+  const make = selectMake.value;
+  const model = selectModel.value;
+  if (make && model && selectedBaseProduct) {
+    let priceModifier = 0;
+    if (make === "Mercedes-Benz" || make === "BMW") {
+      priceModifier = 2500;
+    } else if (make === "Toyota" || make === "Subaru") {
+      priceModifier = 400;
+    } else if (make === "Nissan" || make === "Mazda") {
+      priceModifier = -200;
+    }
+    const finalPrice = selectedBaseProduct.price + priceModifier;
+    previewDiv.innerText = `Price: KSh ${finalPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    previewDiv.style.display = "block";
+  } else {
+    previewDiv.style.display = "none";
+  }
+}
+
 // Initialize when loaded
 document.addEventListener('DOMContentLoaded', function(){
   renderInitialCart();
   countCartTotal();
+  initVehicleModal();
 });

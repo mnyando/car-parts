@@ -10,14 +10,14 @@
       {% for p in products %}
       <div class="product card" data-reveal>
         <div class="card__media">
-          <img class="product-image" src="{{ url_for('static', filename='images/slide' ~ (loop.index % 3 + 1) ~ '.jpg') }}" alt="{{ p.name }}" loading="lazy" decoding="async">
+          <img class="product-image" src="{{ url_for('static', filename='images/' ~ (p.image if p.image else 'brakepad.jpg')) }}" alt="{{ p.name }}" loading="lazy" decoding="async">
         </div>
         <div class="card__row">
           <span class="product-name card__name">{{ p.name }}</span>
           <span class="card__meta">Parts <i class="card__arrow">→</i></span>
         </div>
         <div class="card__price-row">
-          <span class="product-price pdp__price">${{ '%.2f'|format(p.price) }}</span>
+          <span class="product-price pdp__price">KSh {{ '{:,.2f}'.format(p.price) }}</span>
         </div>
         <button class="pdp__add" data-action="add-to-cart" data-product-id="{{ p.id }}">Add To Cart</button>
       </div>

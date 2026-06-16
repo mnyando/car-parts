@@ -37,6 +37,35 @@
       </div>
     </div>
 
+    <!-- Vehicle Selection Modal -->
+    <div class="modal-overlay" id="vehicle-modal" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Select Your Vehicle</h3>
+          <button class="modal-close" id="close-vehicle-modal" aria-label="Close modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">Select your car make and model to match the exact compatible part for your vehicle.</p>
+          <div class="field">
+            <label for="select-make">Make / Manufacturer</label>
+            <select id="select-make">
+              <option value="">-- Choose Make --</option>
+            </select>
+          </div>
+          <div class="field" style="margin-top: var(--space-sm);">
+            <label for="select-model">Model</label>
+            <select id="select-model" disabled>
+              <option value="">-- Choose Model --</option>
+            </select>
+          </div>
+          <div class="modal-price-preview" id="modal-price-preview" style="margin-top: var(--space-sm); font-weight: 600; font-size: var(--fs-lead); text-align: right; display: none;"></div>
+        </div>
+        <div class="modal-footer" style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">
+          <button class="pdp__add" id="confirm-vehicle" style="flex: 1;">Confirm & Add</button>
+        </div>
+      </div>
+    </div>
+
     {% block content %}{% endblock %}
     {% include 'footer.html' %}
 
