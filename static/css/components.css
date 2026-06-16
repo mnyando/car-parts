@@ -97,6 +97,14 @@
 [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
 [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
 
+/* --- Trust Strip --- */
+.trust { display: flex; flex-wrap: wrap; gap: var(--space-md); font-size: var(--fs-small); color: var(--ink-muted); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: var(--space-md) 0; text-transform: uppercase; font-weight: 500; letter-spacing: var(--tracking-wide); }
+
+/* --- Flash Messages & Alerts --- */
+.alert, .flash-message { padding: 16px; border: 1px solid var(--ink); background: #fff; color: var(--ink); margin-bottom: var(--space-md); font-size: var(--fs-small); font-weight: 500; border-radius: var(--radius); }
+
+
+
 
 
 
