@@ -22,4 +22,12 @@
 .drawer__list a:hover { opacity: 0.45; }
 .drawer__foot { position: absolute; bottom: 28px; left: var(--gutter); right: var(--gutter); display: flex; justify-content: space-between; color: var(--ink-muted); font-size: var(--fs-small); }
 
+/* --- Footer --- */
+.ftr { background: var(--ink); color: #fff; padding: var(--section) var(--gutter); }
+.ftr__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-md); max-width: var(--container); margin: 0 auto; }
+.ftr__col h4 { font-size: var(--fs-small); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--ink-muted); margin-bottom: 12px; font-weight: 600; }
+.ftr__col p { color: #fff; font-size: var(--fs-body); margin: 0 0 6px; }
+.ftr__legal { max-width: var(--container); margin: var(--space-lg) auto 0; display: flex; justify-content: space-between; font-size: var(--fs-small); color: var(--ink-muted); border-top: 1px solid rgba(255,255,255,0.15); padding-top: 20px; }
+
+
 
