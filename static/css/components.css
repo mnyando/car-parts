@@ -1,1 +1,14 @@
 /* Car Parts Store — components. Consumes tokens from theme.css. */
+
+/* --- Header --- */
+.hdr { position: fixed; top: 0; left: 0; right: 0; z-index: 60; mix-blend-mode: difference; }
+.hdr__inner { display: flex; align-items: center; justify-content: space-between; padding: 24px var(--gutter); }
+.hdr__logo { font-weight: 700; letter-spacing: var(--tracking-flat); font-size: 1.05rem; color: #fff; } /* difference blend keeps it readable on any bg */
+.hdr__right { display: flex; align-items: center; gap: 20px; color: #fff; }
+.hdr__lang { display: flex; gap: 6px; font-size: var(--fs-small); }
+.hdr__lang button { background: none; border: none; color: #fff; cursor: pointer; opacity: 0.6; font: inherit; }
+.hdr__lang button.is-active { opacity: 1; }
+.hdr__cart { background: none; border: none; color: #fff; cursor: pointer; font: inherit; font-size: var(--fs-small); }
+.hdr__burger { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 5px; padding: 6px; }
+.hdr__burger span { width: 26px; height: 2px; background: #fff; display: block; transition: transform var(--dur-fast) var(--ease); }
+
