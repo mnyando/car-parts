@@ -46,6 +46,19 @@ const SPRING_POSITIONS = {
   "rear": {label: "Rear Axle", modifier: -500}
 };
 
+const OIL_BRANDS = {
+  "castrol": {label: "Castrol", modifier: 400},
+  "shell": {label: "Shell Helix", modifier: 200},
+  "mobil": {label: "Mobil 1", modifier: 500},
+  "total": {label: "Total Quartz", modifier: 0}
+};
+
+const OIL_TYPES = {
+  "synthetic": {label: "Fully Synthetic (5W-30)", modifier: 1500},
+  "semi_synthetic": {label: "Semi-Synthetic (10W-40)", modifier: 0},
+  "heavy_duty_4wd": {label: "Heavy Duty / 4WD (15W-40)", modifier: 1000}
+};
+
 let selectedBaseProduct = null;
 
 function renderInitialCart(){
@@ -85,6 +98,7 @@ addToCartButtonsDOM.forEach(addToCartButtonDOM => {
       const panelVehicle = document.getElementById("modal-fields-vehicle");
       const panelBattery = document.getElementById("modal-fields-battery");
       const panelSprings = document.getElementById("modal-fields-springs");
+      const panelOil = document.getElementById("modal-fields-oil");
       
       if (previewDiv) previewDiv.style.display = "none";
       
@@ -95,6 +109,7 @@ addToCartButtonsDOM.forEach(addToCartButtonDOM => {
         if (panelVehicle) panelVehicle.style.display = "none";
         if (panelBattery) panelBattery.style.display = "block";
         if (panelSprings) panelSprings.style.display = "none";
+        if (panelOil) panelOil.style.display = "none";
         
         const selectVolt = document.getElementById("select-battery-voltage");
         const selectType = document.getElementById("select-battery-type");
@@ -107,11 +122,25 @@ addToCartButtonsDOM.forEach(addToCartButtonDOM => {
         if (panelVehicle) panelVehicle.style.display = "none";
         if (panelBattery) panelBattery.style.display = "none";
         if (panelSprings) panelSprings.style.display = "block";
+        if (panelOil) panelOil.style.display = "none";
         
         const selectSpringType = document.getElementById("select-springs-type");
         const selectSpringPos = document.getElementById("select-springs-position");
         if (selectSpringType) selectSpringType.value = "";
         if (selectSpringPos) selectSpringPos.value = "";
+      } else if (productId === "p3") {
+        // Motor Oil Spec Panel
+        if (titleEl) titleEl.innerText = "Select Motor Oil Specifications";
+        if (descEl) descEl.innerText = "Select your preferred oil brand and engine viscosity type.";
+        if (panelVehicle) panelVehicle.style.display = "none";
+        if (panelBattery) panelBattery.style.display = "none";
+        if (panelSprings) panelSprings.style.display = "none";
+        if (panelOil) panelOil.style.display = "block";
+        
+        const selectBrand = document.getElementById("select-oil-brand");
+        const selectType = document.getElementById("select-oil-type");
+        if (selectBrand) selectBrand.value = "";
+        if (selectType) selectType.value = "";
       } else {
         // Standard Vehicle Panel
         if (titleEl) titleEl.innerText = "Select Your Vehicle";
@@ -119,6 +148,7 @@ addToCartButtonsDOM.forEach(addToCartButtonDOM => {
         if (panelVehicle) panelVehicle.style.display = "block";
         if (panelBattery) panelBattery.style.display = "none";
         if (panelSprings) panelSprings.style.display = "none";
+        if (panelOil) panelOil.style.display = "none";
         
         const selectMake = document.getElementById("select-make");
         const selectModel = document.getElementById("select-model");
@@ -406,6 +436,9 @@ function initVehicleModal() {
 
   selectModel.addEventListener("change", updatePricePreview);
   
+  const selectOilBrand = document.getElementById("select-oil-brand");
+  const selectOilType = document.getElementById("select-oil-type");
+
   // Battery change listeners
   selectVolt.addEventListener("change", updatePricePreview);
   selectBatType.addEventListener("change", updatePricePreview);
@@ -413,6 +446,10 @@ function initVehicleModal() {
   // Springs change listeners
   selectSpringType.addEventListener("change", updatePricePreview);
   selectSpringPos.addEventListener("change", updatePricePreview);
+
+  // Oil change listeners
+  selectOilBrand?.addEventListener("change", updatePricePreview);
+  selectOilType?.addEventListener("change", updatePricePreview);
 
   closeBtn?.addEventListener("click", () => {
     vehicleModal.classList.remove("is-open");
@@ -446,6 +483,17 @@ function initVehicleModal() {
       specId = `p7_${stype}_${pos}`;
       specName = `${SPRING_TYPES[stype].label} Coil Springs (${SPRING_POSITIONS[pos].label})`;
       priceModifier = SPRING_TYPES[stype].modifier + SPRING_POSITIONS[pos].modifier;
+    } else if (selectedBaseProduct.id === "p3") {
+      // Motor Oil confirmation
+      const brand = selectOilBrand.value;
+      const type = selectOilType.value;
+      if (!brand || !type) {
+        alert("Please select both Oil Brand and Type!");
+        return;
+      }
+      specId = `p3_${brand}_${type}`;
+      specName = `${OIL_BRANDS[brand].label} ${OIL_TYPES[type].label} Motor Oil`;
+      priceModifier = OIL_BRANDS[brand].modifier + OIL_TYPES[type].modifier;
     } else {
       // Vehicle confirmation
       const make = selectMake.value;
@@ -521,6 +569,13 @@ function updatePricePreview() {
     const pos = document.getElementById("select-springs-position").value;
     if (stype && pos) {
       priceModifier = SPRING_TYPES[stype].modifier + SPRING_POSITIONS[pos].modifier;
+      isValid = true;
+    }
+  } else if (selectedBaseProduct.id === "p3") {
+    const brand = document.getElementById("select-oil-brand").value;
+    const type = document.getElementById("select-oil-type").value;
+    if (brand && type) {
+      priceModifier = OIL_BRANDS[brand].modifier + OIL_TYPES[type].modifier;
       isValid = true;
     }
   } else {

@@ -107,10 +107,23 @@ SPRING_POSITIONS = {
     "rear": {"label": "Rear Axle", "modifier": -500.00}
 }
 
+OIL_BRANDS = {
+    "castrol": {"label": "Castrol", "modifier": 400.00},
+    "shell": {"label": "Shell Helix", "modifier": 200.00},
+    "mobil": {"label": "Mobil 1", "modifier": 500.00},
+    "total": {"label": "Total Quartz", "modifier": 0.00}
+}
+
+OIL_TYPES = {
+    "synthetic": {"label": "Fully Synthetic (5W-30)", "modifier": 1500.00},
+    "semi_synthetic": {"label": "Semi-Synthetic (10W-40)", "modifier": 0.00},
+    "heavy_duty_4wd": {"label": "Heavy Duty / 4WD (15W-40)", "modifier": 1000.00}
+}
+
 BASE_PRODUCTS = [
     {"id": "p1", "name": "Brake Pad", "price": 3500.00, "image": "brakepad.jpg"},
     {"id": "p2", "name": "Air Filter", "price": 2200.00, "image": "air_filter.jpg"},
-    {"id": "p3", "name": "Castrol Motor Oil", "price": 4500.00, "image": "motor_oil.jpg"},
+    {"id": "p3", "name": "Motor Oil", "price": 4500.00, "image": "motor_oil.jpg"},
     {"id": "p4", "name": "Car Wheel", "price": 12000.00, "image": "wheel.jpg"},
     {"id": "p5", "name": "Side Mirror", "price": 3200.00, "image": "side_mirror.jpg"},
     {"id": "p6", "name": "Car Battery", "price": 9500.00, "image": "battery.jpg"},
@@ -148,7 +161,19 @@ for bp in BASE_PRODUCTS:
                     "price": price,
                     "image": bp["image"]
                 })
-    else: # Vehicle-specific (p1, p2, p3, p4, p5)
+    elif bp["id"] == "p3": # Motor Oil
+        for b_key, b_info in OIL_BRANDS.items():
+            for t_key, t_info in OIL_TYPES.items():
+                specific_id = f"p3_{b_key}_{t_key}"
+                specific_name = f"{b_info['label']} {t_info['label']} Motor Oil"
+                price = bp["price"] + b_info["modifier"] + t_info["modifier"]
+                PRODUCTS.append({
+                    "id": specific_id,
+                    "name": specific_name,
+                    "price": price,
+                    "image": bp["image"]
+                })
+    else: # Vehicle-specific (p1, p2, p4, p5)
         for make, models in MAKES_AND_MODELS.items():
             for model in models:
                 specific_id = f"{bp['id']}_{make.lower()}_{model.lower().replace(' ', '_').replace('-', '_')}"
