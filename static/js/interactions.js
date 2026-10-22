@@ -38,6 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Forms with data-confirm ask before submitting (e.g. admin delete buttons)
+  document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form[data-confirm]');
+    if (form && !window.confirm(form.dataset.confirm)) e.preventDefault();
+  });
+
   // --- IntersectionObserver for Scroll Reveal ---
   const io = new IntersectionObserver((entries) => {
     entries.forEach(e => {

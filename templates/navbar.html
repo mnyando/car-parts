@@ -7,6 +7,9 @@
         <span>/</span>
         <button data-lang="sw">SW</button>
       </div>
+      {% if is_admin %}
+      <a class="hdr__cart" href="{{ url_for('admin.dashboard') }}">Admin</a>
+      {% endif %}
       {% if current_user %}
       <button class="hdr__cart" data-cart-open aria-label="Open cart">Cart (<span data-cart-count>0</span>)</button>
       {% else %}

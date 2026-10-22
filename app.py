@@ -13,6 +13,7 @@ from mpesa import MpesaClient, MpesaError
 from catalog import frontend_config, get_product, list_products, resolve_variant, seed_products
 from local_store import LocalStore
 from auth import init_auth, is_admin, login_required
+from admin import init_admin
 
 MAX_QUANTITY = 99
 MAX_CART_LINES = 50
@@ -38,6 +39,7 @@ if seed_products(db):
 
 # Safaricom can't send our CSRF token, the callback is protected by MPESA_CALLBACK_SECRET instead
 init_auth(app, db, csrf_exempt={'mpesa_callback'})
+init_admin(app, db)
 
 # Initialize Mpesa client
 mp = MpesaClient(

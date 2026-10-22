@@ -1,0 +1,49 @@
+{% extends 'admin/layout.html' %}
+
+{% block admin_content %}
+  <div class="admin__section-head">
+    <h1 class="admin__title">Products &amp; stock</h1>
+    <a class="cart-btn admin__add" href="{{ url_for('admin.new_product') }}">+ Add product</a>
+  </div>
+
+  {% if products %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th class="hide-sm"></th><th>Product</th><th class="hide-sm">Type</th><th class="num">Price</th><th>Stock</th><th>Shop</th><th></th></tr></thead>
+      <tbody>
+        {% for p in products %}
+        {% set stock = p.stock|int %}
+        <tr class="{{ 'row-muted' if not p.get('active', True) }}">
+          <td class="hide-sm"><img class="table__thumb" src="{{ image_url(p.image) }}" alt=""></td>
+          <td><strong>{{ p.name }}</strong>{% if p.description %}<br><span class="admin__hint">{{ p.description|truncate(60) }}</span>{% endif %}</td>
+          <td class="admin__hint hide-sm">{{ kinds.get(p.kind, p.kind).split(' (')[0] }}</td>
+          <td class="num nowrap">KSh {{ '{:,.2f}'.format(p.price) }}</td>
+          <td>
+            <form class="inline-form" method="post" action="{{ url_for('admin.set_stock', product_id=p.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input class="input-sm {{ 'text-danger' if stock <= 0 else 'text-warn' if stock <= LOW_STOCK }}" type="number" name="stock" min="0" value="{{ stock }}" aria-label="Stock for {{ p.name }}">
+              <button class="btn-sm" type="submit">Save</button>
+            </form>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('admin.toggle_product', product_id=p.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn-sm btn-sm--ghost" type="submit" title="Click to {{ 'hide' if p.get('active', True) else 'show' }}">{{ 'Visible' if p.get('active', True) else 'Hidden' }}</button>
+            </form>
+          </td>
+          <td class="nowrap">
+            <a class="btn-sm btn-sm--ghost" href="{{ url_for('admin.edit_product', product_id=p.id) }}">Edit</a>
+            <form class="inline-form" method="post" action="{{ url_for('admin.delete_product', product_id=p.id) }}" data-confirm="Delete {{ p.name }}? This cannot be undone.">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn-sm btn-sm--danger" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="admin__empty">No products yet. Add your first one.</p>
+  {% endif %}
+{% endblock %}

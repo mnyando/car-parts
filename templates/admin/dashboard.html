@@ -1,0 +1,54 @@
+{% extends 'admin/layout.html' %}
+
+{% block admin_content %}
+  <h1 class="admin__title">Dashboard</h1>
+
+  <div class="stats">
+    <a class="stat" href="{{ url_for('admin.products') }}"><span class="stat__label">Products</span><span class="stat__value">{{ stats.products }}</span></a>
+    <a class="stat {{ 'stat--warn' if stats.low_stock }}" href="{{ url_for('admin.products') }}"><span class="stat__label">Low / out of stock</span><span class="stat__value">{{ stats.low_stock }}</span></a>
+    <a class="stat" href="{{ url_for('admin.orders', status='pending') }}"><span class="stat__label">Pending orders</span><span class="stat__value">{{ stats.pending }}</span></a>
+    <a class="stat" href="{{ url_for('admin.orders', status='paid') }}"><span class="stat__label">Paid orders</span><span class="stat__value">{{ stats.paid }}</span></a>
+    <div class="stat"><span class="stat__label">Revenue (paid)</span><span class="stat__value">KSh {{ '{:,.0f}'.format(stats.revenue) }}</span></div>
+  </div>
+
+  <section class="admin__section">
+    <div class="admin__section-head">
+      <h2>Needs restocking</h2>
+      <span class="admin__hint">{{ LOW_STOCK }} or fewer left</span>
+    </div>
+    {% if low_stock %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Product</th><th class="num">Stock</th><th>Set stock</th></tr></thead>
+        <tbody>
+          {% for p in low_stock %}
+          <tr>
+            <td>{{ p.name }}{% if not p.get('active', True) %} <span class="badge">hidden</span>{% endif %}</td>
+            <td class="num {{ 'text-danger' if p.stock|int <= 0 else 'text-warn' }}">{{ p.stock }}</td>
+            <td>
+              <form class="inline-form" method="post" action="{{ url_for('admin.set_stock', product_id=p.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="back" value="dashboard">
+                <input class="input-sm" type="number" name="stock" min="0" value="{{ p.stock }}" aria-label="New stock for {{ p.name }}">
+                <button class="btn-sm" type="submit">Save</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="admin__empty">All products are well stocked.</p>
+    {% endif %}
+  </section>
+
+  <section class="admin__section">
+    <div class="admin__section-head">
+      <h2>Recent orders</h2>
+      <a class="admin__link" href="{{ url_for('admin.orders') }}">All orders →</a>
+    </div>
+    {% set rows = recent_orders %}
+    {% include 'admin/_orders_table.html' %}
+  </section>
+{% endblock %}

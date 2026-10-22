@@ -25,6 +25,9 @@
         {% if current_user %}
         <li><a href="{{ url_for('cart') }}">Cart</a></li>
         {% endif %}
+        {% if is_admin %}
+        <li><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+        {% endif %}
         <li><a href="#contact">Contact</a></li>
         {% if not current_user %}
         <li><a href="{{ url_for('auth.login') }}">Log in</a></li>
