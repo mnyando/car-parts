@@ -4,9 +4,9 @@
   {% include 'navbar.html' %}
 
   <main class="container section auth">
-    <p class="eyebrow">Error {{ code }}</p>
+    <p class="eyebrow">{{ _('Error {code}', code=code) }}</p>
     <h1 class="auth__title">{{ title }}</h1>
     <p class="auth__lead">{{ message }}</p>
-    <a class="cart-btn" href="{{ url_for('index') }}" style="width: auto; display: inline-block; padding: 14px 28px;">Back to home</a>
+    <a class="cart-btn" href="{{ url_for('index') }}" style="width: auto; display: inline-block; padding: 14px 28px;">{{ _('Back to home') }}</a>
   </main>
 {% endblock %}

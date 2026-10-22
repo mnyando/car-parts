@@ -1,11 +1,11 @@
 {% extends 'admin/layout.html' %}
 
 {% block admin_content %}
-  <h1 class="admin__title">Orders</h1>
+  <h1 class="admin__title">{{ _('Orders') }}</h1>
   <nav class="filter" aria-label="Filter by status">
-    <a href="{{ url_for('admin.orders') }}" class="{{ 'is-active' if not status }}">All</a>
+    <a href="{{ url_for('admin.orders') }}" class="{{ 'is-active' if not status }}">{{ _('All') }}</a>
     {% for s in statuses %}
-    <a href="{{ url_for('admin.orders', status=s) }}" class="{{ 'is-active' if status == s }}">{{ s.replace('_', ' ') }}</a>
+    <a href="{{ url_for('admin.orders', status=s) }}" class="{{ 'is-active' if status == s }}">{{ _(s.replace('_', ' ')) }}</a>
     {% endfor %}
   </nav>
   {% set rows = orders %}

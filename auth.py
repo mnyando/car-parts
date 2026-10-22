@@ -16,6 +16,8 @@ import secrets
 from flask import Blueprint, abort, flash, g, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from i18n import _
+
 bp = Blueprint('auth', __name__)
 
 MIN_PASSWORD_LENGTH = 8
@@ -56,7 +58,7 @@ def login_required(view):
     def wrapped(*args, **kwargs):
         if not g.get('user'):
             if _wants_json():
-                return jsonify({'error': 'Please log in to continue', 'login_url': url_for('auth.login')}), 401
+                return jsonify({'error': _('Please log in to continue'), 'login_url': url_for('auth.login')}), 401
             return redirect(url_for('auth.login', next=request.full_path.rstrip('?')))
         return view(*args, **kwargs)
     return wrapped
@@ -117,7 +119,7 @@ def init_auth(app, db, csrf_exempt=()):
             sent = request.headers.get('X-CSRF-Token') or request.form.get('csrf_token') or ''
             if not hmac.compare_digest(sent, session.get('_csrf', '')):
                 if _wants_json():
-                    return jsonify({'error': 'Your session expired, please refresh the page'}), 400
+                    return jsonify({'error': _('Your session expired, please refresh the page')}), 400
                 abort(400, description='Your session expired, please go back and try again.')
 
     @app.context_processor
@@ -143,15 +145,15 @@ def signup():
         password = request.form.get('password', '')
         error = None
         if not form['name']:
-            error = 'Please enter your name.'
+            error = _('Please enter your name.')
         elif not EMAIL_RE.match(email):
-            error = 'Please enter a valid email address.'
+            error = _('Please enter a valid email address.')
         elif len(password) < MIN_PASSWORD_LENGTH:
-            error = f'Password must be at least {MIN_PASSWORD_LENGTH} characters.'
+            error = _('Password must be at least {n} characters.', n=MIN_PASSWORD_LENGTH)
         elif password != request.form.get('confirm', ''):
-            error = 'Passwords do not match.'
+            error = _('Passwords do not match.')
         elif get_user(email):
-            error = 'An account with that email already exists. Please log in.'
+            error = _('An account with that email already exists. Please log in.')
 
         if error:
             flash(error, 'error')
@@ -187,7 +189,7 @@ def login():
                 user['role'] = 'admin'
             _start_session(user)
             return redirect(_safe_next(request.args.get('next')))
-        flash('Incorrect email or password.', 'error')
+        flash(_('Incorrect email or password.'), 'error')
     return render_template('auth/login.html', email=email)
 
 

@@ -4,22 +4,22 @@
   {% include 'navbar.html' %}
 
   <main class="container section auth">
-    <p class="eyebrow">Account</p>
-    <h1 class="auth__title">Log in</h1>
-    <p class="auth__lead">Log in to browse parts and order.</p>
+    <p class="eyebrow">{{ _('Account') }}</p>
+    <h1 class="auth__title">{{ _('Log in') }}</h1>
+    <p class="auth__lead">{{ _('Log in to browse parts and order.') }}</p>
     {% include 'flash.html' %}
     <form class="auth__form" method="post" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email">{{ _('Email') }}</label>
         <input id="email" name="email" type="email" autocomplete="email" value="{{ email }}" required autofocus>
       </div>
       <div class="field">
-        <label for="password">Password</label>
+        <label for="password">{{ _('Password') }}</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required>
       </div>
-      <button class="cart-btn" type="submit">Log in</button>
+      <button class="cart-btn" type="submit">{{ _('Log in') }}</button>
     </form>
-    <p class="auth__switch">New here? <a href="{{ url_for('auth.signup', next=request.args.get('next')) }}">Create an account</a></p>
+    <p class="auth__switch">{{ _('New here?') }} <a href="{{ url_for('auth.signup', next=request.args.get('next')) }}">{{ _('Create an account') }}</a></p>
   </main>
 {% endblock %}

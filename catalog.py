@@ -8,6 +8,8 @@ into a name and price, so the browser and /checkout always agree.
 The same option data is sent to the browser via ``frontend_config()``.
 """
 
+from i18n import _
+
 # Popular makes and models on Kenyan roads (largely Japanese used imports,
 # plus the common European, Korean and pickup/SUV models).
 MAKES_AND_MODELS = {
@@ -205,7 +207,7 @@ def resolve_variant(product, options):
     if kind == "vehicle":
         make, model = options.get("make"), options.get("model")
         if make not in MAKES_AND_MODELS or model not in MAKES_AND_MODELS[make]:
-            raise ValueError(f"Choose a valid make and model for {product['name']}")
+            raise ValueError(_("Choose a valid make and model for {name}", name=product['name']))
         return f"{make}|{model}", f"{make} {model} {product['name']}", base_price + MAKE_PRICE_MODIFIERS.get(make, 0.00)
 
     spec = SPEC_KINDS.get(kind)
@@ -213,7 +215,8 @@ def resolve_variant(product, options):
         first_group, second_group = spec["groups"]
         first, second = first_group["options"].get(options.get("first")), second_group["options"].get(options.get("second"))
         if not first or not second:
-            raise ValueError(f"Choose {first_group['label']} and {second_group['label']} for {product['name']}")
+            raise ValueError(_("Choose {first} and {second} for {name}", first=_(first_group['label']),
+                               second=_(second_group['label']), name=product['name']))
         name = f"{product['name']} - {first['label']} / {second['label']}"
         return f"{options['first']}|{options['second']}", name, base_price + first["modifier"] + second["modifier"]
 

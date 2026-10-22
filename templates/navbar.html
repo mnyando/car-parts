@@ -2,20 +2,21 @@
   <div class="hdr__inner">
     <a class="hdr__logo" href="{{ url_for('index') }}">CARPARTS</a>
     <div class="hdr__right">
-      <div class="hdr__lang" aria-label="Language">
-        <button data-lang="en" class="is-active">EN</button>
+      {% set here = request.full_path.rstrip('?') %}
+      <div class="hdr__lang" aria-label="{{ _('Language') }}">
+        <a href="{{ url_for('set_language', code='en', next=here) }}" class="{{ 'is-active' if lang == 'en' }}" hreflang="en" lang="en">EN</a>
         <span>/</span>
-        <button data-lang="sw">SW</button>
+        <a href="{{ url_for('set_language', code='sw', next=here) }}" class="{{ 'is-active' if lang == 'sw' }}" hreflang="sw" lang="sw">SW</a>
       </div>
       {% if is_admin %}
-      <a class="hdr__cart" href="{{ url_for('admin.dashboard') }}">Admin</a>
+      <a class="hdr__cart" href="{{ url_for('admin.dashboard') }}">{{ _('Admin') }}</a>
       {% endif %}
       {% if current_user %}
-      <button class="hdr__cart" data-cart-open aria-label="Open cart">Cart (<span data-cart-count>0</span>)</button>
+      <button class="hdr__cart" data-cart-open aria-label="{{ _('Open cart') }}">{{ _('Cart') }} (<span data-cart-count>0</span>)</button>
       {% else %}
-      <a class="hdr__cart" href="{{ url_for('auth.login') }}">Log in</a>
+      <a class="hdr__cart" href="{{ url_for('auth.login') }}">{{ _('Log in') }}</a>
       {% endif %}
-      <button class="hdr__burger" data-menu-open aria-label="Open menu"><span></span><span></span></button>
+      <button class="hdr__burger" data-menu-open aria-label="{{ _('Open menu') }}"><span></span><span></span></button>
     </div>
   </div>
 </header>

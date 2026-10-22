@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ lang }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{% block title %}Car Parts{% endblock %}</title>
+    <title>{% block title %}{{ _('Car Parts') }}{% endblock %}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="Genuine and aftermarket car parts in Nairobi. Order online, pay with M-Pesa.">
+    <meta name="description" content="{{ _('Genuine and aftermarket car parts in Nairobi. Order online, pay with M-Pesa.') }}">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='15' fill='%23fff' text-anchor='middle'%3ECP%3C/text%3E%3C/svg%3E">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,26 +18,26 @@
   </head>
   <body>
     <nav class="drawer" data-menu aria-hidden="true">
-      <button class="drawer__close" data-menu-close aria-label="Close menu">Close</button>
+      <button class="drawer__close" data-menu-close aria-label="{{ _('Close menu') }}">{{ _('Close') }}</button>
       <ul class="drawer__list">
-        <li><a href="{{ url_for('index') }}">Home</a></li>
-        <li><a href="{{ url_for('catalog') }}">Shop parts</a></li>
+        <li><a href="{{ url_for('index') }}">{{ _('Home') }}</a></li>
+        <li><a href="{{ url_for('catalog') }}">{{ _('Shop parts') }}</a></li>
         {% if current_user %}
-        <li><a href="{{ url_for('cart') }}">Cart</a></li>
+        <li><a href="{{ url_for('cart') }}">{{ _('Cart') }}</a></li>
         {% endif %}
         {% if is_admin %}
-        <li><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+        <li><a href="{{ url_for('admin.dashboard') }}">{{ _('Admin') }}</a></li>
         {% endif %}
-        <li><a href="#contact">Contact</a></li>
+        <li><a href="#contact">{{ _('Contact') }}</a></li>
         {% if not current_user %}
-        <li><a href="{{ url_for('auth.login') }}">Log in</a></li>
+        <li><a href="{{ url_for('auth.login') }}">{{ _('Log in') }}</a></li>
         {% endif %}
       </ul>
       {% if current_user %}
       <form class="drawer__account" method="post" action="{{ url_for('auth.logout') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <span>Signed in as {{ current_user.name }}{% if is_admin %} (admin){% endif %}</span>
-        <button type="submit">Log out</button>
+        <span>{{ _('Signed in as {name}', name=current_user.name) }}{% if is_admin %} {{ _('(admin)') }}{% endif %}</span>
+        <button type="submit">{{ _('Log out') }}</button>
       </form>
       {% endif %}
       <div class="drawer__foot"><span>Nairobi</span><span>+254 700 000 000</span></div>
@@ -47,8 +47,8 @@
       <div class="cart-drawer__scrim" data-cart-close></div>
       <div class="cart-drawer__panel">
         <div class="cart-drawer__head">
-          <h3>Your Cart</h3>
-          <button class="cart-drawer__close" data-cart-close aria-label="Close cart">Close</button>
+          <h3>{{ _('Your Cart') }}</h3>
+          <button class="cart-drawer__close" data-cart-close aria-label="{{ _('Close cart') }}">{{ _('Close') }}</button>
         </div>
         <div class="cart-root" data-cart-root></div>
       </div>
@@ -58,24 +58,24 @@
     <div class="modal-overlay" id="vehicle-modal" aria-hidden="true">
       <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
-          <h3 id="modal-title">Select Your Vehicle</h3>
-          <button class="modal-close" id="close-vehicle-modal" aria-label="Close modal">&times;</button>
+          <h3 id="modal-title">{{ _('Select Your Vehicle') }}</h3>
+          <button class="modal-close" id="close-vehicle-modal" aria-label="{{ _('Close modal') }}">&times;</button>
         </div>
         <div class="modal-body">
-          <p class="modal-description" id="modal-desc">Select your car make and model to match the exact compatible part for your vehicle.</p>
+          <p class="modal-description" id="modal-desc">{{ _('Select your car make and model to match the exact compatible part for your vehicle.') }}</p>
           
           <!-- Vehicle specific fields (Brake Pad, Air Filter, etc.) -->
           <div id="modal-fields-vehicle">
             <div class="field">
-              <label for="select-make">Make / Manufacturer</label>
+              <label for="select-make">{{ _('Make / Manufacturer') }}</label>
               <select id="select-make">
-                <option value="">-- Choose Make --</option>
+                <option value="">{{ _('-- Choose Make --') }}</option>
               </select>
             </div>
             <div class="field" style="margin-top: var(--space-sm);">
-              <label for="select-model">Model</label>
+              <label for="select-model">{{ _('Model') }}</label>
               <select id="select-model" disabled>
-                <option value="">-- Choose Model --</option>
+                <option value="">{{ _('-- Choose Model --') }}</option>
               </select>
             </div>
           </div>
@@ -95,7 +95,7 @@
           <div class="modal-price-preview" id="modal-price-preview" style="margin-top: var(--space-sm); font-weight: 600; font-size: var(--fs-lead); text-align: right; display: none;"></div>
         </div>
         <div class="modal-footer" style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">
-          <button class="pdp__add" id="confirm-vehicle" style="flex: 1;">Confirm & Add</button>
+          <button class="pdp__add" id="confirm-vehicle" style="flex: 1;">{{ _('Confirm & Add') }}</button>
         </div>
       </div>
     </div>
@@ -105,6 +105,7 @@
 
     <script>
       window.CATALOG = {{ catalog_config|tojson }};
+      window.I18N = {{ js_translations|tojson }};
       window.CURRENT_USER = {{ ({'id': current_user.id, 'phone': current_user.phone} if current_user else None)|tojson }};
     </script>
     <script defer src="{{ url_for('static', filename='js/interactions.js') }}"></script>

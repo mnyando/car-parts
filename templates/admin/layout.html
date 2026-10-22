@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 
-{% block title %}Admin · Car Parts{% endblock %}
+{% block title %}{{ _('Admin') }} · {{ _('Car Parts') }}{% endblock %}
 
 {% block content %}
   {% include 'navbar.html' %}
 
   <main class="container section admin">
-    <p class="eyebrow">Admin</p>
-    <nav class="admin-nav" aria-label="Admin">
+    <p class="eyebrow">{{ _('Admin') }}</p>
+    <nav class="admin-nav" aria-label="{{ _('Admin') }}">
       {% for endpoint, label in [('admin.dashboard', 'Dashboard'), ('admin.products', 'Products & stock'), ('admin.orders', 'Orders'), ('admin.users', 'Users')] %}
-      <a href="{{ url_for(endpoint) }}" class="{{ 'is-active' if request.endpoint == endpoint or (endpoint == 'admin.products' and request.endpoint in ('admin.new_product', 'admin.edit_product')) }}">{{ label }}</a>
+      <a href="{{ url_for(endpoint) }}" class="{{ 'is-active' if request.endpoint == endpoint or (endpoint == 'admin.products' and request.endpoint in ('admin.new_product', 'admin.edit_product')) }}">{{ _(label) }}</a>
       {% endfor %}
-      <a href="{{ url_for('catalog') }}" class="admin-nav__shop">View shop →</a>
+      <a href="{{ url_for('catalog') }}" class="admin-nav__shop">{{ _('View shop →') }}</a>
     </nav>
     {% include 'flash.html' %}
     {% block admin_content %}{% endblock %}

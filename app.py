@@ -14,6 +14,7 @@ from catalog import frontend_config, get_product, list_products, resolve_variant
 from local_store import LocalStore
 from auth import init_auth, is_admin, login_required
 from admin import init_admin
+from i18n import _, init_i18n
 
 MAX_QUANTITY = 99
 MAX_CART_LINES = 50
@@ -38,6 +39,7 @@ if seed_products(db):
     print("Seeded default products", flush=True)
 
 # Safaricom can't send our CSRF token, the callback is protected by MPESA_CALLBACK_SECRET instead
+init_i18n(app)  # first, so later request hooks can use the visitor's language
 init_auth(app, db, csrf_exempt={'mpesa_callback'})
 init_admin(app, db)
 
@@ -76,6 +78,7 @@ def adjust_stock(product_id, delta):
 def inject_template_globals():
     return {"catalog_config": frontend_config(), "year": datetime.date.today().year, "image_url": image_url}
 
+# Translated when rendered
 ERROR_PAGES = {
     400: ("Something went wrong", "Your session may have expired. Please go back and try again."),
     403: ("Access denied", "You don't have permission to view this page."),
@@ -88,7 +91,7 @@ ERROR_PAGES = {
 @app.errorhandler(404)
 def error_page(e):
     title, message = ERROR_PAGES[e.code]
-    return render_template('error.html', code=e.code, title=title, message=message), e.code
+    return render_template('error.html', code=e.code, title=_(title), message=_(message)), e.code
 
 
 @app.route('/')
@@ -120,38 +123,38 @@ def normalize_phone(raw):
 
 
 def parse_cart_items(data):
-    """Return (lines, error) for {"items": [{"product_id", "options", "quantity"}]}.
+    """Return (lines, error, http_status) for {"items": [{"product_id", "options", "quantity"}]}.
 
     Names and prices come from the database + catalog options, never from the browser.
     Requested quantities are checked against stock.
     """
     raw_items = data.get('items')
     if not isinstance(raw_items, list) or not raw_items:
-        return None, "Your cart is empty"
+        return None, _("Your cart is empty"), 400
     if len(raw_items) > MAX_CART_LINES:
-        return None, "Too many items in cart"
+        return None, _("Too many items in cart"), 400
 
     lines = {}
     products = {}
     for item in raw_items:
         if not isinstance(item, dict):
-            return None, "Invalid cart item"
+            return None, _("Invalid cart item"), 400
         product_id = item.get('product_id')
         if product_id not in products:
             products[product_id] = get_product(db, product_id)
         product = products[product_id]
         if not product or not product.get('active', True):
-            return None, f"Product not found: {product_id}"
+            return None, _("Product not found: {id}", id=product_id), 404
         try:
             variant_key, name, unit_price = resolve_variant(product, item.get('options'))
         except ValueError as e:
-            return None, str(e)
+            return None, str(e), 400
         try:
             quantity = int(item.get('quantity', 1))
         except (TypeError, ValueError):
-            return None, "Invalid quantity"
+            return None, _("Invalid quantity"), 400
         if quantity < 1 or quantity > MAX_QUANTITY:
-            return None, f"Quantity must be between 1 and {MAX_QUANTITY}"
+            return None, _("Quantity must be between 1 and {max}", max=MAX_QUANTITY), 400
         line = lines.setdefault((product_id, variant_key), {
             'product_id': product_id,
             'variant': variant_key,
@@ -169,11 +172,13 @@ def parse_cart_items(data):
         stock = int(products[product_id].get('stock', 0))
         if quantity > stock:
             name = products[product_id]['name']
-            return None, f"Only {max(stock, 0)} {name} left in stock" if stock > 0 else f"{name} is out of stock"
+            if stock > 0:
+                return None, _("Only {n} {name} left in stock", n=stock, name=name), 409
+            return None, _("{name} is out of stock", name=name), 409
 
     for line in lines.values():
         line['line_total'] = line['unit_price'] * line['quantity']
-    return list(lines.values()), None
+    return list(lines.values()), None, 200
 
 
 @app.route('/checkout', methods=['POST'])
@@ -183,11 +188,10 @@ def checkout():
 
     phone = normalize_phone(data.get('phone'))
     if not phone:
-        return jsonify({"error": "Enter a valid Safaricom number, e.g. 0712345678 or 254712345678"}), 400
+        return jsonify({"error": _("Enter a valid Safaricom number, e.g. 0712345678 or 254712345678")}), 400
 
-    lines, error = parse_cart_items(data)
+    lines, error, status = parse_cart_items(data)
     if error:
-        status = 404 if error.startswith('Product not found') else 409 if 'stock' in error else 400
         return jsonify({"error": error}), status
 
     # Total is always computed server-side from catalog prices
@@ -214,7 +218,7 @@ def checkout():
     except Exception as e:  # network errors, timeouts, bad JSON
         print(f"STK Push error for order {order_ref.id}: {e!r}", flush=True)
         order_ref.update({'status': 'failed', 'error': repr(e)})
-        return jsonify({"error": "Could not reach M-Pesa, please try again"}), 502
+        return jsonify({"error": _("Could not reach M-Pesa, please try again")}), 502
 
     checkout_request_id = res.get('CheckoutRequestID')
     order_ref.update({
@@ -227,7 +231,7 @@ def checkout():
         db.collection('checkout_requests').document(checkout_request_id).set({'order_id': order_ref.id})
     if str(res.get('ResponseCode')) != '0':
         order_ref.update({'status': 'failed'})
-        return jsonify({"error": res.get('ResponseDescription') or "M-Pesa did not accept the request"}), 502
+        return jsonify({"error": res.get('ResponseDescription') or _("M-Pesa did not accept the request")}), 502
 
     return jsonify({
         "order_id": order_ref.id,

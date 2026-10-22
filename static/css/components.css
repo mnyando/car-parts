@@ -6,8 +6,8 @@
 .hdr__logo { font-weight: 700; letter-spacing: var(--tracking-flat); font-size: 1.05rem; color: #fff; } /* difference blend keeps it readable on any bg */
 .hdr__right { display: flex; align-items: center; gap: 20px; color: #fff; }
 .hdr__lang { display: flex; gap: 6px; font-size: var(--fs-small); }
-.hdr__lang button { background: none; border: none; color: #fff; cursor: pointer; opacity: 0.6; font: inherit; }
-.hdr__lang button.is-active { opacity: 1; }
+.hdr__lang a { color: #fff; opacity: 0.6; }
+.hdr__lang a:hover, .hdr__lang a.is-active { opacity: 1; }
 .hdr__cart { background: none; border: none; color: #fff; cursor: pointer; font: inherit; font-size: var(--fs-small); white-space: nowrap; }
 @media (max-width: 420px) { .hdr__right { gap: 12px; } }
 .hdr__burger { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 5px; padding: 6px; }

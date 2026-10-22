@@ -14,6 +14,14 @@ const PAYMENT_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 const CART_KEY = `cart:${(window.CURRENT_USER && window.CURRENT_USER.id) || "guest"}`;
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || "";
 
+// Swahili (or other) strings from i18n.py; English text is the key
+const I18N = window.I18N || {};
+function t(text, values) {
+  let out = I18N[text] || text;
+  Object.entries(values || {}).forEach(([key, value]) => { out = out.split(`{${key}}`).join(value); });
+  return out;
+}
+
 let cart = loadCart();
 // stage: cart | form | submitting | waiting | paid | failed | timeout
 let checkoutState = { stage: "cart", phone: (window.CURRENT_USER && window.CURRENT_USER.phone) || "", message: "", orderId: null, reference: null, amount: 0 };
@@ -96,10 +104,10 @@ function renderItems() {
         <p class="cart-item-price">${formatKSh(item.price)}</p>
       </div>
       <div class="cart-item-controls">
-        <button class="cart-qty-btn" data-cart-action="decrease" data-id="${escapeHTML(item.id)}" aria-label="Decrease quantity">&minus;</button>
+        <button class="cart-qty-btn" data-cart-action="decrease" data-id="${escapeHTML(item.id)}" aria-label="${t("Decrease quantity")}">&minus;</button>
         <span class="cart-item-quantity">${item.quantity}</span>
-        <button class="cart-qty-btn" data-cart-action="increase" data-id="${escapeHTML(item.id)}" aria-label="Increase quantity">&plus;</button>
-        <button class="cart-qty-btn cart-remove-btn" data-cart-action="remove" data-id="${escapeHTML(item.id)}" aria-label="Remove item">&times;</button>
+        <button class="cart-qty-btn" data-cart-action="increase" data-id="${escapeHTML(item.id)}" aria-label="${t("Increase quantity")}">&plus;</button>
+        <button class="cart-qty-btn cart-remove-btn" data-cart-action="remove" data-id="${escapeHTML(item.id)}" aria-label="${t("Remove item")}">&times;</button>
       </div>
     </div>`).join("");
 }
@@ -107,8 +115,8 @@ function renderItems() {
 function renderEmpty() {
   return `
     <div class="cart-empty">
-      <p>Your cart is empty.</p>
-      <a class="cart-btn" href="/catalog">Browse parts</a>
+      <p>${t("Your cart is empty.")}</p>
+      <a class="cart-btn" href="/catalog">${t("Browse parts")}</a>
     </div>`;
 }
 
@@ -119,16 +127,16 @@ function renderCheckout() {
   if (stage === "form" || stage === "submitting") {
     return `
       <div class="cart-footer">
-        <p class="cart-footer-total">Total: ${formatKSh(cartTotal())}</p>
+        <p class="cart-footer-total">${t("Total: {amount}", { amount: formatKSh(cartTotal()) })}</p>
         <form class="checkout-form-container" data-checkout-form novalidate>
           <div class="field">
-            <label>M-Pesa Phone Number
-              <input type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="e.g. 0712345678" value="${escapeHTML(phone)}" ${busy ? "disabled" : ""} required>
+            <label>${t("M-Pesa Phone Number")}
+              <input type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="${t("e.g. 0712345678")}" value="${escapeHTML(phone)}" ${busy ? "disabled" : ""} required>
             </label>
           </div>
-          <button class="cart-btn" type="submit" ${busy ? "disabled" : ""}>${busy ? "Requesting STK Push..." : "Pay with M-Pesa"}</button>
-          <button class="cart-btn cart-btn--ghost" type="button" data-cart-action="back" ${busy ? "disabled" : ""}>Back to Cart</button>
-          <div class="checkout-status ${busy ? "" : "error"}" role="status">${escapeHTML(busy ? "Connecting to Safaricom..." : message)}</div>
+          <button class="cart-btn" type="submit" ${busy ? "disabled" : ""}>${busy ? t("Requesting STK Push...") : t("Pay with M-Pesa")}</button>
+          <button class="cart-btn cart-btn--ghost" type="button" data-cart-action="back" ${busy ? "disabled" : ""}>${t("Back to Cart")}</button>
+          <div class="checkout-status ${busy ? "" : "error"}" role="status">${escapeHTML(busy ? t("Connecting to Safaricom...") : message)}</div>
         </form>
       </div>`;
   }
@@ -136,37 +144,37 @@ function renderCheckout() {
   if (stage === "waiting") {
     return `
       <div class="checkout-result">
-        <p class="checkout-result__title">Check your phone</p>
-        <p>Enter your M-Pesa PIN on ${escapeHTML(phone)} to pay ${formatKSh(checkoutState.amount)}.</p>
-        <p class="checkout-status" role="status">Waiting for payment confirmation...</p>
-        <button class="cart-btn cart-btn--ghost" type="button" data-cart-action="back">Back to Cart</button>
+        <p class="checkout-result__title">${t("Check your phone")}</p>
+        <p>${escapeHTML(t("Enter your M-Pesa PIN on {phone} to pay {amount}.", { phone, amount: formatKSh(checkoutState.amount) }))}</p>
+        <p class="checkout-status" role="status">${t("Waiting for payment confirmation...")}</p>
+        <button class="cart-btn cart-btn--ghost" type="button" data-cart-action="back">${t("Back to Cart")}</button>
       </div>`;
   }
 
   if (stage === "paid") {
     return `
       <div class="checkout-result">
-        <p class="checkout-result__title">Payment received</p>
-        <p class="checkout-status success" role="status">Thank you! Your order ${escapeHTML(checkoutState.reference || "")} is confirmed and will be delivered shortly.</p>
-        <a class="cart-btn" href="/catalog" data-cart-action="done">Continue Shopping</a>
+        <p class="checkout-result__title">${t("Payment received")}</p>
+        <p class="checkout-status success" role="status">${escapeHTML(t("Thank you! Your order {reference} is confirmed and will be delivered shortly.", { reference: checkoutState.reference || "" }))}</p>
+        <a class="cart-btn" href="/catalog" data-cart-action="done">${t("Continue Shopping")}</a>
       </div>`;
   }
 
   if (stage === "failed" || stage === "timeout") {
     return `
       <div class="checkout-result">
-        <p class="checkout-result__title">${stage === "failed" ? "Payment not completed" : "Still waiting"}</p>
+        <p class="checkout-result__title">${stage === "failed" ? t("Payment not completed") : t("Still waiting")}</p>
         <p class="checkout-status error" role="status">${escapeHTML(message)}</p>
-        <button class="cart-btn" type="button" data-cart-action="checkout">Try Again</button>
-        <button class="cart-btn cart-btn--ghost" type="button" data-cart-action="back">Back to Cart</button>
+        <button class="cart-btn" type="button" data-cart-action="checkout">${t("Try Again")}</button>
+        <button class="cart-btn cart-btn--ghost" type="button" data-cart-action="back">${t("Back to Cart")}</button>
       </div>`;
   }
 
   return `
     <div class="cart-footer">
-      <p class="cart-footer-total">Total: ${formatKSh(cartTotal())}</p>
-      <button class="cart-btn" type="button" data-cart-action="checkout">Checkout</button>
-      <button class="cart-btn cart-btn--ghost" type="button" data-cart-action="clear">Clear Cart</button>
+      <p class="cart-footer-total">${t("Total: {amount}", { amount: formatKSh(cartTotal()) })}</p>
+      <button class="cart-btn" type="button" data-cart-action="checkout">${t("Checkout")}</button>
+      <button class="cart-btn cart-btn--ghost" type="button" data-cart-action="clear">${t("Clear Cart")}</button>
     </div>`;
 }
 
@@ -203,7 +211,7 @@ async function submitCheckout(phoneValue) {
   const phone = phoneValue.replace(/[\s\-()]/g, "");
   // Accepts 07XXXXXXXX, 01XXXXXXXX, 2547XXXXXXXX, +2547XXXXXXXX (server normalizes)
   if (!phone.match(/^(\+?254|0)?[17]\d{8}$/)) {
-    setCheckout({ stage: "form", phone: phoneValue, message: "Please enter a valid Safaricom number, e.g. 0712345678 or 254712345678." });
+    setCheckout({ stage: "form", phone: phoneValue, message: t("Please enter a valid Safaricom number, e.g. 0712345678 or 254712345678.") });
     return;
   }
 
@@ -224,12 +232,12 @@ async function submitCheckout(phoneValue) {
       return;
     }
     if (!response.ok) {
-      throw new Error(result.error || "Failed to start checkout");
+      throw new Error(result.error || t("Failed to start checkout"));
     }
     setCheckout({ stage: "waiting", orderId: result.order_id, reference: result.reference, amount: result.amount });
     pollPaymentStatus(result.order_id, Date.now());
   } catch (err) {
-    setCheckout({ stage: "form", message: `Error: ${err.message}` });
+    setCheckout({ stage: "form", message: t("Error: {message}", { message: err.message }) });
   }
 }
 
@@ -250,13 +258,13 @@ function pollPaymentStatus(orderId, startedAt) {
       try { localStorage.removeItem(CART_KEY); } catch (e) { /* ignore */ }
       setCheckout({ stage: "paid" });
     } else if (status === "cancelled") {
-      setCheckout({ stage: "failed", message: "The payment request was cancelled on your phone. Your cart has been kept." });
+      setCheckout({ stage: "failed", message: t("The payment request was cancelled on your phone. Your cart has been kept.") });
     } else if (status === "failed") {
-      setCheckout({ stage: "failed", message: "The payment did not go through (e.g. wrong PIN, insufficient funds or timeout). Your cart has been kept." });
+      setCheckout({ stage: "failed", message: t("The payment did not go through (e.g. wrong PIN, insufficient funds or timeout). Your cart has been kept.") });
     } else if (status === "amount_mismatch") {
-      setCheckout({ stage: "failed", message: `We received a payment that doesn't match the order total. Please contact us with order reference ${checkoutState.reference}.` });
+      setCheckout({ stage: "failed", message: t("We received a payment that doesn't match the order total. Please contact us with order reference {reference}.", { reference: checkoutState.reference }) });
     } else if (Date.now() - startedAt > PAYMENT_POLL_TIMEOUT_MS) {
-      setCheckout({ stage: "timeout", message: `We haven't received confirmation yet. If you completed the payment, please contact us with order reference ${checkoutState.reference}.` });
+      setCheckout({ stage: "timeout", message: t("We haven't received confirmation yet. If you completed the payment, please contact us with order reference {reference}.", { reference: checkoutState.reference }) });
     } else {
       pollPaymentStatus(orderId, startedAt);
     }
@@ -338,24 +346,24 @@ function openSelectionModal(baseProduct) {
   document.getElementById("modal-price-preview").style.display = "none";
 
   if (spec) {
-    document.getElementById("modal-title").innerText = spec.title;
-    document.getElementById("modal-desc").innerText = spec.description;
+    document.getElementById("modal-title").innerText = t(spec.title);
+    document.getElementById("modal-desc").innerText = t(spec.description);
     panelVehicle.style.display = "none";
     panelSpec.style.display = "block";
     spec.groups.forEach((group, i) => {
-      document.getElementById(`label-spec-${i}`).innerText = group.label;
+      document.getElementById(`label-spec-${i}`).innerText = t(group.label);
       const hints = {};
-      Object.entries(group.options).forEach(([key, opt]) => { hints[key] = opt.hint; });
-      fillSelect(document.getElementById(`select-spec-${i}`), group.placeholder, hints);
+      Object.entries(group.options).forEach(([key, opt]) => { hints[key] = t(opt.hint); });
+      fillSelect(document.getElementById(`select-spec-${i}`), t(group.placeholder), hints);
     });
   } else {
-    document.getElementById("modal-title").innerText = "Select Your Vehicle";
-    document.getElementById("modal-desc").innerText = "Select your car make and model to match the exact compatible part for your vehicle.";
+    document.getElementById("modal-title").innerText = t("Select Your Vehicle");
+    document.getElementById("modal-desc").innerText = t("Select your car make and model to match the exact compatible part for your vehicle.");
     panelVehicle.style.display = "block";
     panelSpec.style.display = "none";
     document.getElementById("select-make").value = "";
     const selectModel = document.getElementById("select-model");
-    fillSelect(selectModel, "-- Choose Model --", {});
+    fillSelect(selectModel, t("-- Choose Model --"), {});
     selectModel.disabled = true;
   }
 
@@ -383,7 +391,7 @@ function currentSelection() {
       return key ? { key, ...group.options[key] } : null;
     });
     if (!first || !second) {
-      return { error: `Please select both ${spec.groups[0].label} and ${spec.groups[1].label}!` };
+      return { error: t("Please select both {first} and {second}!", { first: t(spec.groups[0].label), second: t(spec.groups[1].label) }) };
     }
     return {
       options: { first: first.key, second: second.key },
@@ -395,7 +403,7 @@ function currentSelection() {
   const make = document.getElementById("select-make").value;
   const model = document.getElementById("select-model").value;
   if (!make || !model) {
-    return { error: "Please select both Make and Model!" };
+    return { error: t("Please select both Make and Model!") };
   }
   return {
     options: { make, model },
@@ -425,7 +433,7 @@ function updatePricePreview() {
   if (selection.error) {
     previewDiv.style.display = "none";
   } else {
-    previewDiv.innerText = `Price: ${formatKSh(selection.price)}`;
+    previewDiv.innerText = t("Price: {price}", { price: formatKSh(selection.price) });
     previewDiv.style.display = "block";
   }
 }
@@ -439,13 +447,13 @@ function initVehicleModal() {
 
   const makes = {};
   Object.keys(CATALOG.makes).forEach(make => { makes[make] = make; });
-  fillSelect(selectMake, "-- Choose Make --", makes);
+  fillSelect(selectMake, t("-- Choose Make --"), makes);
 
   selectMake.addEventListener("change", () => {
     const make = selectMake.value;
     const models = {};
     (CATALOG.makes[make] || []).forEach(model => { models[model] = model; });
-    fillSelect(selectModel, "-- Choose Model --", models);
+    fillSelect(selectModel, t("-- Choose Model --"), models);
     selectModel.disabled = !make;
     updatePricePreview();
   });

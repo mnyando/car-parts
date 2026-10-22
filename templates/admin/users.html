@@ -1,11 +1,11 @@
 {% extends 'admin/layout.html' %}
 
 {% block admin_content %}
-  <h1 class="admin__title">Users</h1>
-  <p class="admin__hint">Emails listed in ADMIN_EMAIL are always made admin again when they log in.</p>
+  <h1 class="admin__title">{{ _('Users') }}</h1>
+  <p class="admin__hint">{{ _('Emails listed in ADMIN_EMAIL are always made admin again when they log in.') }}</p>
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Role</th><th></th></tr></thead>
+      <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Email') }}</th><th>{{ _('Phone') }}</th><th>{{ _('Joined') }}</th><th>{{ _('Role') }}</th><th></th></tr></thead>
       <tbody>
         {% for u in users %}
         <tr>
@@ -13,16 +13,16 @@
           <td>{{ u.email }}</td>
           <td class="nowrap">{{ u.phone or '—' }}</td>
           <td class="nowrap">{{ (u.created_at or '')[:10] }}</td>
-          <td><span class="badge {{ 'badge--paid' if u.role == 'admin' }}">{{ u.role }}</span></td>
+          <td><span class="badge {{ 'badge--paid' if u.role == 'admin' }}">{{ _(u.role) }}</span></td>
           <td>
             {% if u.id != current_user.id %}
             <form method="post" action="{{ url_for('admin.set_role', user_id=u.id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="role" value="{{ 'shopper' if u.role == 'admin' else 'admin' }}">
-              <button class="btn-sm btn-sm--ghost" type="submit">{{ 'Make shopper' if u.role == 'admin' else 'Make admin' }}</button>
+              <button class="btn-sm btn-sm--ghost" type="submit">{{ _('Make shopper') if u.role == 'admin' else _('Make admin') }}</button>
             </form>
             {% else %}
-            <span class="admin__hint">you</span>
+            <span class="admin__hint">{{ _('you') }}</span>
             {% endif %}
           </td>
         </tr>

@@ -6,6 +6,7 @@ from flask import Blueprint, abort, flash, g, redirect, render_template, request
 
 from auth import admin_required
 from catalog import BUILTIN_IMAGES, PRODUCT_KINDS, get_product, list_products
+from i18n import _
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -47,40 +48,40 @@ def _parse_product_form(form):
         'active': form.get('active') == 'on',
     }
     if not data['name']:
-        errors.append('Name is required.')
+        errors.append(_('Name is required.'))
     if data['kind'] not in PRODUCT_KINDS:
-        errors.append('Choose a valid product type.')
+        errors.append(_('Choose a valid product type.'))
 
     try:
         data['price'] = round(float(form.get('price', '')), 2)
         if not 0 < data['price'] <= MAX_PRICE:
             raise ValueError
     except ValueError:
-        errors.append(f'Price must be a number between 1 and {MAX_PRICE:,}.')
+        errors.append(_('Price must be a number between 1 and {max}.', max=f'{MAX_PRICE:,}'))
 
     try:
         data['stock'] = int(form.get('stock', ''))
         if not 0 <= data['stock'] <= MAX_STOCK:
             raise ValueError
     except ValueError:
-        errors.append(f'Stock must be a whole number between 0 and {MAX_STOCK:,}.')
+        errors.append(_('Stock must be a whole number between 0 and {max}.', max=f'{MAX_STOCK:,}'))
 
     try:
         data['sort'] = int(form.get('sort') or 1000)
     except ValueError:
-        errors.append('Display order must be a whole number.')
+        errors.append(_('Display order must be a whole number.'))
 
     image_url = form.get('image_url', '').strip()
     builtin = form.get('image_builtin', '')
     if image_url:
         # Only plain web URLs: blocks javascript:/data: tricks in <img src>
         if not re.match(r'^https?://[^\s"\'<>]+$', image_url):
-            errors.append('Image URL must start with http:// or https://')
+            errors.append(_('Image URL must start with http:// or https://'))
         data['image'] = image_url
     elif builtin in BUILTIN_IMAGES:
         data['image'] = builtin
     else:
-        errors.append('Paste an image URL or choose one of the built-in images.')
+        errors.append(_('Paste an image URL or choose one of the built-in images.'))
     return data, errors
 
 
@@ -120,7 +121,7 @@ def new_product():
             data['created_at'] = _now()
             ref = _db.collection('products').document()
             ref.set(data)
-            flash(f'Added "{data["name"]}".', 'success')
+            flash(_('Added "{name}".', name=data['name']), 'success')
             return redirect(url_for('admin.products'))
         for error in errors:
             flash(error, 'error')
@@ -138,7 +139,7 @@ def edit_product(product_id):
         if not errors:
             data['updated_at'] = _now()
             _db.collection('products').document(product_id).update(data)
-            flash(f'Saved "{data["name"]}".', 'success')
+            flash(_('Saved "{name}".', name=data['name']), 'success')
             return redirect(url_for('admin.products'))
         for error in errors:
             flash(error, 'error')
@@ -156,10 +157,10 @@ def set_stock(product_id):
         if not 0 <= stock <= MAX_STOCK:
             raise ValueError
     except ValueError:
-        flash(f'Stock must be a whole number between 0 and {MAX_STOCK:,}.', 'error')
+        flash(_('Stock must be a whole number between 0 and {max}.', max=f'{MAX_STOCK:,}'), 'error')
         return redirect(url_for('admin.products'))
     _db.collection('products').document(product_id).update({'stock': stock, 'updated_at': _now()})
-    flash(f'{product["name"]}: stock set to {stock}.', 'success')
+    flash(_('{name}: stock set to {stock}.', name=product['name'], stock=stock), 'success')
     if request.form.get('back') == 'dashboard':
         return redirect(url_for('admin.dashboard'))
     return redirect(url_for('admin.products'))
@@ -171,7 +172,8 @@ def toggle_product(product_id):
     product = get_product(_db, product_id) or abort(404)
     active = not product.get('active', True)
     _db.collection('products').document(product_id).update({'active': active, 'updated_at': _now()})
-    flash(f'{product["name"]} is now {"visible in" if active else "hidden from"} the shop.', 'success')
+    message = '{name} is now visible in the shop.' if active else '{name} is now hidden from the shop.'
+    flash(_(message, name=product['name']), 'success')
     return redirect(url_for('admin.products'))
 
 
@@ -180,7 +182,7 @@ def toggle_product(product_id):
 def delete_product(product_id):
     product = get_product(_db, product_id) or abort(404)
     _db.collection('products').document(product_id).delete()
-    flash(f'Deleted "{product["name"]}". Past orders keep their item names.', 'success')
+    flash(_('Deleted "{name}". Past orders keep their item names.', name=product['name']), 'success')
     return redirect(url_for('admin.products'))
 
 
@@ -209,11 +211,12 @@ def set_role(user_id):
     if role not in ('admin', 'shopper'):
         abort(400)
     if user_id == g.user['id'] and role != 'admin':
-        flash("You can't remove your own admin role.", 'error')
+        flash(_("You can't remove your own admin role."), 'error')
         return redirect(url_for('admin.users'))
     snap = _db.collection('users').document(user_id).get()
     if not snap.exists:
         abort(404)
     _db.collection('users').document(user_id).update({'role': role})
-    flash(f'{snap.to_dict().get("email", user_id)} is now {"an admin" if role == "admin" else "a shopper"}.', 'success')
+    message = '{email} is now an admin.' if role == 'admin' else '{email} is now a shopper.'
+    flash(_(message, email=snap.to_dict().get('email', user_id)), 'success')
     return redirect(url_for('admin.users'))

@@ -4,34 +4,34 @@
   {% include 'navbar.html' %}
 
   <main class="container section auth">
-    <p class="eyebrow">Account</p>
-    <h1 class="auth__title">Create an account</h1>
-    <p class="auth__lead">Sign up to browse parts and pay with M-Pesa.</p>
+    <p class="eyebrow">{{ _('Account') }}</p>
+    <h1 class="auth__title">{{ _('Create an account') }}</h1>
+    <p class="auth__lead">{{ _('Sign up to browse parts and pay with M-Pesa.') }}</p>
     {% include 'flash.html' %}
     <form class="auth__form" method="post" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="field">
-        <label for="name">Full name</label>
+        <label for="name">{{ _('Full name') }}</label>
         <input id="name" name="name" type="text" autocomplete="name" value="{{ form.name }}" required autofocus>
       </div>
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email">{{ _('Email') }}</label>
         <input id="email" name="email" type="email" autocomplete="email" value="{{ form.email }}" required>
       </div>
       <div class="field">
-        <label for="phone">M-Pesa phone (optional)</label>
-        <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="e.g. 0712345678" value="{{ form.phone }}">
+        <label for="phone">{{ _('M-Pesa phone (optional)') }}</label>
+        <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="{{ _('e.g. 0712345678') }}" value="{{ form.phone }}">
       </div>
       <div class="field">
-        <label for="password">Password</label>
+        <label for="password">{{ _('Password') }}</label>
         <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
       </div>
       <div class="field">
-        <label for="confirm">Confirm password</label>
+        <label for="confirm">{{ _('Confirm password') }}</label>
         <input id="confirm" name="confirm" type="password" autocomplete="new-password" minlength="8" required>
       </div>
-      <button class="cart-btn" type="submit">Create account</button>
+      <button class="cart-btn" type="submit">{{ _('Create account') }}</button>
     </form>
-    <p class="auth__switch">Already have an account? <a href="{{ url_for('auth.login', next=request.args.get('next')) }}">Log in</a></p>
+    <p class="auth__switch">{{ _('Already have an account?') }} <a href="{{ url_for('auth.login', next=request.args.get('next')) }}">{{ _('Log in') }}</a></p>
   </main>
 {% endblock %}

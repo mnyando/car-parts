@@ -4,7 +4,7 @@
   {% include 'navbar.html' %}
   
   <main class="container section">
-    <p class="eyebrow" data-reveal>Catalog</p>
+    <p class="eyebrow" data-reveal>{{ _('Catalog') }}</p>
     
     <div class="grid">
       {% for p in products %}
@@ -15,34 +15,34 @@
         </div>
         <div class="card__row">
           <span class="product-name card__name">{{ p.name }}</span>
-          <span class="card__meta">Parts <i class="card__arrow">→</i></span>
+          <span class="card__meta">{{ _('Parts') }} <i class="card__arrow">→</i></span>
         </div>
         {% if p.description %}<p class="card__desc">{{ p.description }}</p>{% endif %}
         <div class="card__price-row">
           <span class="product-price pdp__price">KSh {{ '{:,.2f}'.format(p.price) }}</span>
           {% if stock <= 0 %}
-          <span class="card__stock card__stock--out">Out of stock</span>
+          <span class="card__stock card__stock--out">{{ _('Out of stock') }}</span>
           {% elif stock <= 5 %}
-          <span class="card__stock card__stock--low">Only {{ stock }} left</span>
+          <span class="card__stock card__stock--low">{{ _('Only {n} left', n=stock) }}</span>
           {% else %}
-          <span class="card__stock">In stock</span>
+          <span class="card__stock">{{ _('In stock') }}</span>
           {% endif %}
         </div>
         <button class="pdp__add" data-action="add-to-cart" data-product-id="{{ p.id }}" data-kind="{{ p.kind or 'simple' }}"
-                data-price="{{ p.price }}" data-stock="{{ stock }}" {% if stock <= 0 %}disabled{% endif %}>{{ 'Out of Stock' if stock <= 0 else 'Add To Cart' }}</button>
+                data-price="{{ p.price }}" data-stock="{{ stock }}" {% if stock <= 0 %}disabled{% endif %}>{{ _('Out of stock') if stock <= 0 else _('Add To Cart') }}</button>
       </div>
       {% else %}
       <div class="catalog-empty" data-reveal style="grid-column: 1 / -1; text-align: center; padding: var(--space-lg) 0; color: var(--ink-muted);">
-        <p style="font-size: var(--fs-lead); font-weight: 500;">No parts match yet — try another make or category.</p>
+        <p style="font-size: var(--fs-lead); font-weight: 500;">{{ _('No parts available yet. Please check back soon.') }}</p>
       </div>
       {% endfor %}
     </div>
 
     <div id="information" class="trust" style="margin-top: var(--space-xl);">
-      <p>Your order will be processed and delivered within one hour of placing.</p>
-      <p>Make sure you have the total amount for the order during delivery.</p>
-      <p>In case of any comment or complaint, please reach out to us as fast as possible.</p>
-      <p id="regards">Regards, Management</p>
+      <p>{{ _('Your order will be processed and delivered within one hour of placing.') }}</p>
+      <p>{{ _('Make sure you have the total amount for the order during delivery.') }}</p>
+      <p>{{ _('In case of any comment or complaint, please reach out to us as fast as possible.') }}</p>
+      <p id="regards">{{ _('Regards, Management') }}</p>
     </div>
   </main>
 
