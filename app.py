@@ -42,8 +42,8 @@ mp = MpesaClient(
 )
 
 @app.context_processor
-def inject_catalog_config():
-    return {"catalog_config": frontend_config()}
+def inject_template_globals():
+    return {"catalog_config": frontend_config(), "year": datetime.date.today().year}
 
 @app.route('/')
 def index():
@@ -134,7 +134,7 @@ def checkout():
     })
 
     # Initiate STK Push. Daraja limits AccountReference to 12 characters.
-    account_reference = f"CP{order_ref.id[:10]}".upper()
+    account_reference = ("CP" + re.sub(r'[^A-Za-z0-9]', '', order_ref.id)[:10]).upper()
     try:
         res = mp.stk_push(phone_number=phone, amount=amount, account_reference=account_reference, transaction_desc="Car parts")
     except MpesaError as e:
@@ -160,6 +160,7 @@ def checkout():
 
     return jsonify({
         "order_id": order_ref.id,
+        "reference": account_reference,
         "amount": amount,
         "customer_message": res.get('CustomerMessage'),
     })

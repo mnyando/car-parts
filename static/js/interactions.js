@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Drawer menu triggers
   document.querySelector('[data-menu-open]')?.addEventListener('click', () => open('.drawer'));
   document.querySelector('[data-menu-close]')?.addEventListener('click', () => close('.drawer'));
+  document.querySelectorAll('.drawer__list a').forEach(link => {
+    link.addEventListener('click', () => close('.drawer'));
+  });
 
   // Cart drawer triggers
   document.querySelector('[data-cart-open]')?.addEventListener('click', () => open('.cart-drawer'));

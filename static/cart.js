@@ -12,7 +12,7 @@ const PAYMENT_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
 let cart = loadCart();
 // stage: cart | form | submitting | waiting | paid | failed | timeout
-let checkoutState = { stage: "cart", phone: "", message: "", orderId: null, amount: 0 };
+let checkoutState = { stage: "cart", phone: "", message: "", orderId: null, reference: null, amount: 0 };
 let pollTimer = null;
 let selectedBaseProduct = null;
 
@@ -143,7 +143,7 @@ function renderCheckout() {
     return `
       <div class="checkout-result">
         <p class="checkout-result__title">Payment received</p>
-        <p class="checkout-status success" role="status">Thank you! Your order ${escapeHTML(checkoutState.orderId || "")} is confirmed and will be delivered shortly.</p>
+        <p class="checkout-status success" role="status">Thank you! Your order ${escapeHTML(checkoutState.reference || "")} is confirmed and will be delivered shortly.</p>
         <a class="cart-btn" href="/catalog" data-cart-action="done">Continue Shopping</a>
       </div>`;
   }
@@ -218,7 +218,7 @@ async function submitCheckout(phoneValue) {
     if (!response.ok) {
       throw new Error(result.error || "Failed to start checkout");
     }
-    setCheckout({ stage: "waiting", orderId: result.order_id, amount: result.amount });
+    setCheckout({ stage: "waiting", orderId: result.order_id, reference: result.reference, amount: result.amount });
     pollPaymentStatus(result.order_id, Date.now());
   } catch (err) {
     setCheckout({ stage: "form", message: `Error: ${err.message}` });
@@ -246,9 +246,9 @@ function pollPaymentStatus(orderId, startedAt) {
     } else if (status === "failed") {
       setCheckout({ stage: "failed", message: "The payment did not go through (e.g. wrong PIN, insufficient funds or timeout). Your cart has been kept." });
     } else if (status === "amount_mismatch") {
-      setCheckout({ stage: "failed", message: `We received a payment that doesn't match the order total. Please contact us with order reference ${orderId}.` });
+      setCheckout({ stage: "failed", message: `We received a payment that doesn't match the order total. Please contact us with order reference ${checkoutState.reference}.` });
     } else if (Date.now() - startedAt > PAYMENT_POLL_TIMEOUT_MS) {
-      setCheckout({ stage: "timeout", message: `We haven't received confirmation yet. If you completed the payment, please contact us with order reference ${orderId}.` });
+      setCheckout({ stage: "timeout", message: `We haven't received confirmation yet. If you completed the payment, please contact us with order reference ${checkoutState.reference}.` });
     } else {
       pollPaymentStatus(orderId, startedAt);
     }
