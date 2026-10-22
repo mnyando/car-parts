@@ -48,7 +48,11 @@
 .card__meta { font-size: var(--fs-small); color: var(--ink-muted); text-transform: uppercase; font-weight: 500; letter-spacing: var(--tracking-wide); }
 .card__arrow { display: inline-block; transition: transform var(--dur-fast) var(--ease); font-style: normal; }
 .card:hover .card__arrow { transform: translateX(6px); }
-.card__price-row { margin-bottom: var(--space-sm); }
+.card__price-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.card__desc { font-size: var(--fs-small); color: var(--ink-muted); margin: 0 0 var(--space-xs); }
+.card__stock { font-size: var(--fs-small); color: var(--ink-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); font-weight: 500; }
+.card__stock--low { color: #b26a00; }
+.card__stock--out { color: #c62828; }
 .pdp__price { font-size: var(--fs-lead); font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
 .pdp__add { width: 100%; background: var(--ink); color: #fff; border: none; padding: 14px; font: inherit; font-size: var(--fs-small); font-weight: 600; text-transform: uppercase; letter-spacing: var(--tracking-wide); cursor: pointer; transition: opacity var(--dur-fast) var(--ease); }
 .pdp__add:hover { opacity: 0.85; }

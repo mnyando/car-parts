@@ -4,13 +4,13 @@ import hmac
 import time
 import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, url_for
 
 load_dotenv()
 
 from firebase_config import get_firestore_client
 from mpesa import MpesaClient, MpesaError
-from catalog import BASE_PRODUCTS, get_product, frontend_config
+from catalog import frontend_config, get_product, list_products, resolve_variant, seed_products
 from local_store import LocalStore
 
 MAX_QUANTITY = 99
@@ -28,9 +28,12 @@ try:
     FIRESTORE_ENABLED = True
 except Exception as e:
     # Firestore not configured; fall back to a simple local JSON store for development
-    print(f"Firestore unavailable ({e}); using local_orders.json", flush=True)
-    db = LocalStore('local_orders.json')
+    print(f"Firestore unavailable ({e}); using local_db.json", flush=True)
+    db = LocalStore('local_db.json', legacy_path='local_orders.json')
     FIRESTORE_ENABLED = False
+
+if seed_products(db):
+    print("Seeded default products", flush=True)
 
 # Initialize Mpesa client
 mp = MpesaClient(
@@ -41,9 +44,31 @@ mp = MpesaClient(
     passkey=os.getenv("MPESA_PASSKEY")
 )
 
+def image_url(image):
+    """Products store either a full image URL or the name of a file in static/images."""
+    if not image:
+        return url_for('static', filename='images/brakepad.jpg')
+    if image.startswith(('http://', 'https://', '/')):
+        return image
+    return url_for('static', filename='images/' + image)
+
+
+def adjust_stock(product_id, delta):
+    """Atomically add delta to a product's stock (negative to take stock)."""
+    ref = db.collection('products').document(product_id)
+    try:
+        if FIRESTORE_ENABLED:
+            from firebase_admin import firestore
+            ref.update({'stock': firestore.Increment(delta)})
+        else:
+            ref.increment('stock', delta)
+    except Exception as e:  # product deleted since the order was placed
+        print(f"Could not adjust stock for {product_id}: {e}", flush=True)
+
+
 @app.context_processor
 def inject_template_globals():
-    return {"catalog_config": frontend_config(), "year": datetime.date.today().year}
+    return {"catalog_config": frontend_config(), "year": datetime.date.today().year, "image_url": image_url}
 
 @app.route('/')
 def index():
@@ -52,7 +77,7 @@ def index():
 
 @app.route('/catalog')
 def catalog():
-    return render_template('catalog.html', products=BASE_PRODUCTS)
+    return render_template('catalog.html', products=list_products(db))
 
 
 @app.route('/cart')
@@ -72,35 +97,56 @@ def normalize_phone(raw):
 
 
 def parse_cart_items(data):
-    """Return (lines, error). Accepts {"items": [{"id", "quantity"}]} or legacy {"product_id"}."""
+    """Return (lines, error) for {"items": [{"product_id", "options", "quantity"}]}.
+
+    Names and prices come from the database + catalog options, never from the browser.
+    Requested quantities are checked against stock.
+    """
     raw_items = data.get('items')
-    if raw_items is None and data.get('product_id'):
-        raw_items = [{'id': data.get('product_id'), 'quantity': 1}]
     if not isinstance(raw_items, list) or not raw_items:
         return None, "Your cart is empty"
     if len(raw_items) > MAX_CART_LINES:
         return None, "Too many items in cart"
 
     lines = {}
+    products = {}
     for item in raw_items:
         if not isinstance(item, dict):
             return None, "Invalid cart item"
-        product = get_product(item.get('id'))
-        if not product:
-            return None, f"Product not found: {item.get('id')}"
+        product_id = item.get('product_id')
+        if product_id not in products:
+            products[product_id] = get_product(db, product_id)
+        product = products[product_id]
+        if not product or not product.get('active', True):
+            return None, f"Product not found: {product_id}"
+        try:
+            variant_key, name, unit_price = resolve_variant(product, item.get('options'))
+        except ValueError as e:
+            return None, str(e)
         try:
             quantity = int(item.get('quantity', 1))
         except (TypeError, ValueError):
             return None, "Invalid quantity"
         if quantity < 1 or quantity > MAX_QUANTITY:
             return None, f"Quantity must be between 1 and {MAX_QUANTITY}"
-        line = lines.setdefault(product['id'], {
-            'product_id': product['id'],
-            'name': product['name'],
-            'unit_price': product['price'],
+        line = lines.setdefault((product_id, variant_key), {
+            'product_id': product_id,
+            'variant': variant_key,
+            'name': name,
+            'unit_price': unit_price,
             'quantity': 0,
         })
         line['quantity'] = min(line['quantity'] + quantity, MAX_QUANTITY)
+
+    # Stock is tracked per product, shared by all of its variants
+    wanted = {}
+    for line in lines.values():
+        wanted[line['product_id']] = wanted.get(line['product_id'], 0) + line['quantity']
+    for product_id, quantity in wanted.items():
+        stock = int(products[product_id].get('stock', 0))
+        if quantity > stock:
+            name = products[product_id]['name']
+            return None, f"Only {max(stock, 0)} {name} left in stock" if stock > 0 else f"{name} is out of stock"
 
     for line in lines.values():
         line['line_total'] = line['unit_price'] * line['quantity']
@@ -117,7 +163,7 @@ def checkout():
 
     lines, error = parse_cart_items(data)
     if error:
-        status = 404 if error.startswith('Product not found') else 400
+        status = 404 if error.startswith('Product not found') else 409 if 'stock' in error else 400
         return jsonify({"error": error}), status
 
     # Total is always computed server-side from catalog prices
@@ -186,11 +232,17 @@ def apply_payment_result(order_ref, order, result_code, result_desc, receipt=Non
     else:
         status = 'failed'
 
-    order_ref.update({
+    update = {
         'status': status,
         'mpesa_result': {'code': result_code, 'desc': result_desc, 'receipt': receipt, 'amount': paid_amount},
         'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    })
+    }
+    # Take the sold items out of stock exactly once
+    if status == 'paid' and not order.get('stock_applied'):
+        update['stock_applied'] = True
+        for line in order.get('items', []):
+            adjust_stock(line['product_id'], -int(line['quantity']))
+    order_ref.update(update)
     return status
 
 

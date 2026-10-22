@@ -4,7 +4,7 @@
 
 // Catalog data (makes, price modifiers, spec options) is served by the backend
 // in base.html, so prices here always match what /checkout charges.
-const CATALOG = window.CATALOG || { makes: {}, makeModifiers: {}, specProducts: {} };
+const CATALOG = window.CATALOG || { makes: {}, makeModifiers: {}, specKinds: {} };
 
 // How long to wait for the customer to enter their M-Pesa PIN
 const PAYMENT_POLL_INTERVAL_MS = 4000;
@@ -20,7 +20,7 @@ function loadCart() {
   try {
     const stored = JSON.parse(localStorage.getItem("cart"));
     if (!Array.isArray(stored)) return [];
-    return stored.filter(item => item && item.id && item.name && Number(item.quantity) > 0)
+    return stored.filter(item => item && item.id && item.product_id && item.name && Number(item.quantity) > 0)
       .map(item => ({ ...item, price: Number(item.price) || 0, quantity: Number(item.quantity) }));
   } catch (e) {
     return []; // corrupt or unavailable storage shouldn't break the page
@@ -211,7 +211,7 @@ async function submitCheckout(phoneValue) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         phone: phone,
-        items: cart.map(item => ({ id: item.id, quantity: item.quantity }))
+        items: cart.map(item => ({ product_id: item.product_id, options: item.options || {}, quantity: item.quantity }))
       })
     });
     const result = await response.json().catch(() => ({}));
@@ -323,7 +323,7 @@ function openSelectionModal(baseProduct) {
   const vehicleModal = document.getElementById("vehicle-modal");
   if (!vehicleModal) return;
 
-  const spec = CATALOG.specProducts[baseProduct.id];
+  const spec = CATALOG.specKinds[baseProduct.kind];
   const panelVehicle = document.getElementById("modal-fields-vehicle");
   const panelSpec = document.getElementById("modal-fields-spec");
 
@@ -363,10 +363,11 @@ function closeSelectionModal() {
   vehicleModal.setAttribute("aria-hidden", "true");
 }
 
-// Returns {id, name, price} for the current modal selection, or {error} if incomplete.
+// Returns {options, name, price} for the current modal selection, or {error} if incomplete.
+// Must stay in sync with catalog.resolve_variant on the backend (which has the final say).
 function currentSelection() {
   const base = selectedBaseProduct;
-  const spec = CATALOG.specProducts[base.id];
+  const spec = CATALOG.specKinds[base.kind];
 
   if (spec) {
     const [first, second] = spec.groups.map((group, i) => {
@@ -377,8 +378,8 @@ function currentSelection() {
       return { error: `Please select both ${spec.groups[0].label} and ${spec.groups[1].label}!` };
     }
     return {
-      id: `${base.id}_${first.key}_${second.key}`,
-      name: spec.name_format.replace("{first}", first.label).replace("{second}", second.label),
+      options: { first: first.key, second: second.key },
+      name: `${base.name} - ${first.label} / ${second.label}`,
       price: base.price + first.modifier + second.modifier
     };
   }
@@ -388,12 +389,24 @@ function currentSelection() {
   if (!make || !model) {
     return { error: "Please select both Make and Model!" };
   }
-  // Must match catalog.vehicle_product_id on the backend
   return {
-    id: `${base.id}_${make.toLowerCase()}_${model.toLowerCase().replace(/ /g, '_').replace(/-/g, '_')}`,
+    options: { make, model },
     name: `${make} ${model} ${base.name}`,
     price: base.price + (CATALOG.makeModifiers[make] || 0)
   };
+}
+
+function addSelectionToCart(base, selection) {
+  const optionKey = Object.values(selection.options).join("|");
+  addToCart({
+    id: optionKey ? `${base.id}:${optionKey}` : base.id,
+    product_id: base.id,
+    options: selection.options,
+    image: base.image,
+    name: selection.name,
+    price: selection.price
+  });
+  openCartDrawer();
 }
 
 function updatePricePreview() {
@@ -448,26 +461,26 @@ function initVehicleModal() {
       alert(selection.error);
       return;
     }
-    addToCart({
-      id: selection.id,
-      image: selectedBaseProduct.image,
-      name: selection.name,
-      price: selection.price
-    });
     closeSelectionModal();
-    openCartDrawer();
+    addSelectionToCart(selectedBaseProduct, selection);
   });
 
-  // Catalog "Add To Cart" buttons open the modal
+  // Catalog "Add To Cart" buttons open the modal (simple products go straight to the cart)
   document.querySelectorAll('[data-action="add-to-cart"]').forEach(button => {
     button.addEventListener("click", () => {
       const productDOM = button.closest(".product");
-      openSelectionModal({
+      const base = {
         id: button.getAttribute("data-product-id"),
+        kind: button.getAttribute("data-kind") || "simple",
         image: productDOM.querySelector(".product-image").getAttribute("src"),
-        name: productDOM.querySelector(".product-name").innerText,
+        name: productDOM.querySelector(".product-name").textContent.trim(),
         price: parseFloat(button.getAttribute("data-price")) || 0
-      });
+      };
+      if (base.kind === "simple") {
+        addSelectionToCart(base, { options: {}, name: base.name, price: base.price });
+      } else {
+        openSelectionModal(base);
+      }
     });
   });
 }

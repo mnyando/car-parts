@@ -8,18 +8,28 @@
     
     <div class="grid">
       {% for p in products %}
+      {% set stock = p.stock|int %}
       <div class="product card" data-reveal>
         <div class="card__media">
-          <img class="product-image" src="{{ url_for('static', filename='images/' ~ (p.image if p.image else 'brakepad.jpg')) }}" alt="{{ p.name }}" loading="lazy" decoding="async">
+          <img class="product-image" src="{{ image_url(p.image) }}" alt="{{ p.name }}" loading="lazy" decoding="async">
         </div>
         <div class="card__row">
           <span class="product-name card__name">{{ p.name }}</span>
           <span class="card__meta">Parts <i class="card__arrow">→</i></span>
         </div>
+        {% if p.description %}<p class="card__desc">{{ p.description }}</p>{% endif %}
         <div class="card__price-row">
           <span class="product-price pdp__price">KSh {{ '{:,.2f}'.format(p.price) }}</span>
+          {% if stock <= 0 %}
+          <span class="card__stock card__stock--out">Out of stock</span>
+          {% elif stock <= 5 %}
+          <span class="card__stock card__stock--low">Only {{ stock }} left</span>
+          {% else %}
+          <span class="card__stock">In stock</span>
+          {% endif %}
         </div>
-        <button class="pdp__add" data-action="add-to-cart" data-product-id="{{ p.id }}" data-price="{{ p.price }}">Add To Cart</button>
+        <button class="pdp__add" data-action="add-to-cart" data-product-id="{{ p.id }}" data-kind="{{ p.kind or 'simple' }}"
+                data-price="{{ p.price }}" data-stock="{{ stock }}" {% if stock <= 0 %}disabled{% endif %}>{{ 'Out of Stock' if stock <= 0 else 'Add To Cart' }}</button>
       </div>
       {% else %}
       <div class="catalog-empty" data-reveal style="grid-column: 1 / -1; text-align: center; padding: var(--space-lg) 0; color: var(--ink-muted);">

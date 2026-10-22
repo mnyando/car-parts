@@ -10,5 +10,6 @@ serviceAccountKey.json
 .venv/
 venv/
 local_orders.json
+local_db.json
 static/.DS_Store
 
