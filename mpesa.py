@@ -56,6 +56,12 @@ class MpesaClient:
         self.token_expires_at = time.time() + int(data.get('expires_in', 3599)) - 60
         return self.token
 
+    def _password(self):
+        """Daraja password: base64(shortcode + passkey + timestamp). Returns (password, timestamp)."""
+        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        password_str = f"{self.shortcode}{self.passkey}{timestamp}"
+        return base64.b64encode(password_str.encode()).decode(), timestamp
+
     def stk_push(self, phone_number: str, amount: float, account_reference: str, transaction_desc: str = 'Payment'):
         """Send STK Push (Lipa na M-PESA Online). Returns the API response as dict.
 
@@ -69,10 +75,7 @@ class MpesaClient:
             raise MpesaError('MPESA_SHORTCODE and MPESA_PASSKEY must be configured to perform STK Push')
 
         token = self._get_oauth_token()
-
-        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        password_str = f"{self.shortcode}{self.passkey}{timestamp}"
-        password = base64.b64encode(password_str.encode()).decode()
+        password, timestamp = self._password()
 
         url = f"{self._base_url()}/mpesa/stkpush/v1/processrequest"
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
@@ -100,4 +103,34 @@ class MpesaClient:
             except ValueError:
                 message = None
             raise MpesaError(f"M-Pesa rejected the request: {message or r.status_code}")
+        return r.json()
+
+    def stk_query(self, checkout_request_id: str):
+        """Ask Safaricom for the result of an STK Push. Returns the API response as dict.
+
+        While the customer hasn't responded yet Safaricom answers with an HTTP error
+        ("The transaction is being processed"); that is raised as MpesaError.
+        """
+        if self.disabled or not self.shortcode or not self.passkey:
+            raise MpesaError('M-Pesa not configured')
+
+        token = self._get_oauth_token()
+        password, timestamp = self._password()
+        url = f"{self._base_url()}/mpesa/stkpushquery/v1/query"
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        payload = {
+            "BusinessShortCode": self.shortcode,
+            "Password": password,
+            "Timestamp": timestamp,
+            "CheckoutRequestID": checkout_request_id
+        }
+        r = requests.post(url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT)
+        if r.status_code >= 400:
+            if r.status_code == 401:
+                self.token = None
+            try:
+                message = r.json().get('errorMessage')
+            except ValueError:
+                message = None
+            raise MpesaError(f"STK query failed: {message or r.status_code}")
         return r.json()
