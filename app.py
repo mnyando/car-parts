@@ -1,12 +1,17 @@
 import os
+import re
+import datetime
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify
 
 load_dotenv()
 
 from firebase_config import get_firestore_client
-from mpesa import MpesaClient
+from mpesa import MpesaClient, MpesaError
 from catalog import BASE_PRODUCTS, get_product, frontend_config
+
+MAX_QUANTITY = 99
+MAX_CART_LINES = 50
 
 app = Flask(__name__)
 
@@ -88,43 +93,106 @@ def catalog():
 def cart():
     return render_template('cart.html')
 
+def normalize_phone(raw):
+    """Convert 07XXXXXXXX / 01XXXXXXXX / +2547XXXXXXXX etc. to 2547XXXXXXXX. Returns None if invalid."""
+    phone = re.sub(r'[\s\-()]', '', str(raw or ''))
+    if phone.startswith('+'):
+        phone = phone[1:]
+    if phone.startswith('0'):
+        phone = '254' + phone[1:]
+    elif len(phone) == 9:
+        phone = '254' + phone
+    return phone if re.fullmatch(r'254[17]\d{8}', phone) else None
+
+
+def parse_cart_items(data):
+    """Return (lines, error). Accepts {"items": [{"id", "quantity"}]} or legacy {"product_id"}."""
+    raw_items = data.get('items')
+    if raw_items is None and data.get('product_id'):
+        raw_items = [{'id': data.get('product_id'), 'quantity': 1}]
+    if not isinstance(raw_items, list) or not raw_items:
+        return None, "Your cart is empty"
+    if len(raw_items) > MAX_CART_LINES:
+        return None, "Too many items in cart"
+
+    lines = {}
+    for item in raw_items:
+        if not isinstance(item, dict):
+            return None, "Invalid cart item"
+        product = get_product(item.get('id'))
+        if not product:
+            return None, f"Product not found: {item.get('id')}"
+        try:
+            quantity = int(item.get('quantity', 1))
+        except (TypeError, ValueError):
+            return None, "Invalid quantity"
+        if quantity < 1 or quantity > MAX_QUANTITY:
+            return None, f"Quantity must be between 1 and {MAX_QUANTITY}"
+        line = lines.setdefault(product['id'], {
+            'product_id': product['id'],
+            'name': product['name'],
+            'unit_price': product['price'],
+            'quantity': 0,
+        })
+        line['quantity'] = min(line['quantity'] + quantity, MAX_QUANTITY)
+
+    for line in lines.values():
+        line['line_total'] = line['unit_price'] * line['quantity']
+    return list(lines.values()), None
+
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    data = request.form or request.json
-    phone = data.get('phone')
-    product_id = data.get('product_id')
+    data = request.get_json(silent=True) or request.form.to_dict()
 
-    if not phone or not product_id:
-        return jsonify({"error": "phone and product_id required"}), 400
+    phone = normalize_phone(data.get('phone'))
+    if not phone:
+        return jsonify({"error": "Enter a valid Safaricom number, e.g. 0712345678 or 254712345678"}), 400
 
-    product = get_product(product_id)
-    if not product:
-        return jsonify({"error": "product not found"}), 404
+    lines, error = parse_cart_items(data)
+    if error:
+        status = 404 if error.startswith('Product not found') else 400
+        return jsonify({"error": error}), status
 
-    amount = product['price']
+    # Total is always computed server-side from catalog prices
+    amount = sum(line['line_total'] for line in lines)
+
     # Create order in Firestore (or local fallback)
     order_ref = db.collection('orders').document()
-    order_data = {
-        'product_id': product_id,
+    order_ref.set({
+        'items': lines,
         'phone': phone,
         'amount': amount,
-        'status': 'pending'
-    }
-    order_ref.set(order_data)
+        'status': 'pending',
+        'created_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    })
 
-    # Initiate STK Push
+    # Initiate STK Push. Daraja limits AccountReference to 12 characters.
+    account_reference = f"CP{order_ref.id[:10]}".upper()
     try:
-        res = mp.stk_push(phone_number=phone, amount=amount, account_reference=order_ref.id, transaction_desc=f"Order {order_ref.id}")
-        # save MPesa response with the order (may contain CheckoutRequestID)
-        try:
-            order_ref.update({'mpesa_response': res})
-        except Exception:
-            # local store update may behave differently; ignore errors here
-            pass
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        res = mp.stk_push(phone_number=phone, amount=amount, account_reference=account_reference, transaction_desc="Car parts")
+    except MpesaError as e:
+        order_ref.update({'status': 'failed', 'error': str(e)})
+        return jsonify({"error": str(e)}), 503
+    except Exception as e:  # network errors, timeouts, bad JSON
+        print(f"STK Push error for order {order_ref.id}: {e!r}", flush=True)
+        order_ref.update({'status': 'failed', 'error': repr(e)})
+        return jsonify({"error": "Could not reach M-Pesa, please try again"}), 502
 
-    return jsonify({"order_id": order_ref.id, "mpesa_response": res})
+    order_ref.update({
+        'account_reference': account_reference,
+        'checkout_request_id': res.get('CheckoutRequestID'),
+        'mpesa_response': res,
+    })
+    if str(res.get('ResponseCode')) != '0':
+        order_ref.update({'status': 'failed'})
+        return jsonify({"error": res.get('ResponseDescription') or "M-Pesa did not accept the request"}), 502
+
+    return jsonify({
+        "order_id": order_ref.id,
+        "amount": amount,
+        "customer_message": res.get('CustomerMessage'),
+    })
 
 
 @app.route('/mpesa/callback', methods=['POST'])

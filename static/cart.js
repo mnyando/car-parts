@@ -268,7 +268,7 @@ function checkout(){
     <div class="checkout-form-container">
       <div class="field">
         <label for="checkout-phone">M-Pesa Phone Number</label>
-        <input type="tel" id="checkout-phone" placeholder="e.g. 254712345678" value="2547" required>
+        <input type="tel" id="checkout-phone" placeholder="e.g. 0712345678" required>
       </div>
       <button class="btn btn-primary" id="trigger-stk-push" style="width:100%; margin-top: 10px;">Pay with M-Pesa</button>
       <button class="btn btn-secondary" id="cancel-checkout" style="background: none; border: 1px solid var(--line-strong); color: var(--ink); width: 100%; padding: 12px; margin-top: 8px;">Back to Cart</button>
@@ -287,14 +287,15 @@ function checkout(){
   // Handle STK Push trigger
   document.getElementById("trigger-stk-push").addEventListener("click", async () => {
     const phoneInput = document.getElementById("checkout-phone");
-    const phone = phoneInput.value.trim();
+    const phone = phoneInput.value.replace(/[\s\-()]/g, "");
     const statusDiv = document.querySelector(".checkout-status");
     const payBtn = document.getElementById("trigger-stk-push");
     const cancelBtn = document.getElementById("cancel-checkout");
     
-    if (!phone.match(/^2547\d{8}$/) && !phone.match(/^2541\d{8}$/)) {
+    // Accepts 07XXXXXXXX, 01XXXXXXXX, 2547XXXXXXXX, +2547XXXXXXXX (server normalizes)
+    if (!phone.match(/^(\+?254|0)?[17]\d{8}$/)) {
       statusDiv.className = "checkout-status error";
-      statusDiv.innerText = "Please enter a valid Safaricom number starting with 2547 or 2541 (12 digits total).";
+      statusDiv.innerText = "Please enter a valid Safaricom number, e.g. 0712345678 or 254712345678.";
       return;
     }
     
@@ -305,13 +306,13 @@ function checkout(){
     statusDiv.innerText = "Connecting to Safaricom Daraja API...";
     
     try {
-      // Use the first item in the cart for checkout
+      // Send every cart line; the server re-prices them from the catalog
       const response = await fetch("/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: phone,
-          product_id: cart[0].id
+          items: cart.map(item => ({ id: item.id, quantity: item.quantity }))
         })
       });
       
