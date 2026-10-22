@@ -3,61 +3,9 @@ let cart = JSON.parse(localStorage.getItem("cart")) || [];
 const cartDOM = document.querySelector(".cart");
 const addToCartButtonsDOM = document.querySelectorAll('[data-action="add-to-cart"]');
 
-function formatPrice(priceStr){
-  // remove $ and parse to float
-  return parseFloat(priceStr.replace(/[^0-9.\.]/g, '')) || 0;
-}
-
-const MAKES_AND_MODELS = {
-  "Toyota": ["Vitz", "Fielder", "Corolla", "Harrier", "Land Cruiser", "Probox"],
-  "Nissan": ["X-Trail", "Note", "Sylphy", "Wingroad"],
-  "Subaru": ["Impreza", "Forester", "Legacy"],
-  "Honda": ["Fit", "Civic", "CR-V"],
-  "Mazda": ["Demio", "Axela", "CX-5"],
-  "Mitsubishi": ["Outlander", "Lancer", "Pajero"],
-  "Volkswagen": ["Golf", "Tiguan", "Polo", "Passat"],
-  "Mercedes-Benz": ["C-Class", "E-Class", "GLC"],
-  "BMW": ["3 Series", "5 Series", "X3", "X5"],
-  "Hyundai": ["Tucson", "Elantra", "Santa Fe"]
-};
-
-const BATTERY_VOLTAGES = {
-  "12v_45ah": {label: "12V 45Ah", modifier: -1500},
-  "12v_65ah": {label: "12V 65Ah", modifier: 0},
-  "12v_75ah": {label: "12V 75Ah", modifier: 1500},
-  "12v_90ah": {label: "12V 90Ah", modifier: 3500},
-  "24v_100ah": {label: "24V 100Ah", modifier: 7500}
-};
-
-const BATTERY_TYPES = {
-  "maintenance_free": {label: "Maintenance-Free (SLA)", modifier: 0},
-  "agm": {label: "AGM (Start-Stop)", modifier: 4000},
-  "efb": {label: "EFB", modifier: 2000}
-};
-
-const SPRING_TYPES = {
-  "standard_14mm": {label: "Standard Duty (14mm)", modifier: 0},
-  "heavy_duty_16mm": {label: "Heavy Duty (16mm)", modifier: 1500},
-  "lowered_12mm": {label: "Lowered / Sports (12mm)", modifier: 2500}
-};
-
-const SPRING_POSITIONS = {
-  "front": {label: "Front Axle", modifier: 0},
-  "rear": {label: "Rear Axle", modifier: -500}
-};
-
-const OIL_BRANDS = {
-  "castrol": {label: "Castrol", modifier: 400},
-  "shell": {label: "Shell Helix", modifier: 200},
-  "mobil": {label: "Mobil 1", modifier: 500},
-  "total": {label: "Total Quartz", modifier: 0}
-};
-
-const OIL_TYPES = {
-  "synthetic": {label: "Fully Synthetic (5W-30)", modifier: 1500},
-  "semi_synthetic": {label: "Semi-Synthetic (10W-40)", modifier: 0},
-  "heavy_duty_4wd": {label: "Heavy Duty / 4WD (15W-40)", modifier: 1000}
-};
+// Catalog data (makes, price modifiers, spec options) is served by the backend
+// in base.html, so prices here always match what /checkout charges.
+const CATALOG = window.CATALOG || { makes: {}, makeModifiers: {}, specProducts: {} };
 
 let selectedBaseProduct = null;
 
@@ -71,96 +19,102 @@ function renderInitialCart(){
   }
 }
 
+function fillSelect(selectEl, placeholder, options) {
+  selectEl.innerHTML = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.innerText = placeholder;
+  selectEl.appendChild(first);
+  Object.entries(options).forEach(([value, text]) => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.innerText = text;
+    selectEl.appendChild(opt);
+  });
+}
+
+function openSelectionModal(baseProduct) {
+  selectedBaseProduct = baseProduct;
+  const vehicleModal = document.getElementById("vehicle-modal");
+  if (!vehicleModal) return;
+
+  const spec = CATALOG.specProducts[baseProduct.id];
+  const panelVehicle = document.getElementById("modal-fields-vehicle");
+  const panelSpec = document.getElementById("modal-fields-spec");
+
+  document.getElementById("modal-price-preview").style.display = "none";
+
+  if (spec) {
+    document.getElementById("modal-title").innerText = spec.title;
+    document.getElementById("modal-desc").innerText = spec.description;
+    panelVehicle.style.display = "none";
+    panelSpec.style.display = "block";
+    spec.groups.forEach((group, i) => {
+      document.getElementById(`label-spec-${i}`).innerText = group.label;
+      const hints = {};
+      Object.entries(group.options).forEach(([key, opt]) => { hints[key] = opt.hint; });
+      fillSelect(document.getElementById(`select-spec-${i}`), group.placeholder, hints);
+    });
+  } else {
+    document.getElementById("modal-title").innerText = "Select Your Vehicle";
+    document.getElementById("modal-desc").innerText = "Select your car make and model to match the exact compatible part for your vehicle.";
+    panelVehicle.style.display = "block";
+    panelSpec.style.display = "none";
+    document.getElementById("select-make").value = "";
+    const selectModel = document.getElementById("select-model");
+    fillSelect(selectModel, "-- Choose Model --", {});
+    selectModel.disabled = true;
+  }
+
+  vehicleModal.classList.add("is-open");
+  vehicleModal.setAttribute("aria-hidden", "false");
+}
+
 // Set up the generic catalog add-to-cart triggers
 addToCartButtonsDOM.forEach(addToCartButtonDOM => {
   addToCartButtonDOM.addEventListener("click", () => {
     const productDOM = addToCartButtonDOM.parentNode;
-    const productId = addToCartButtonDOM.getAttribute('data-product-id') || null;
-    
-    selectedBaseProduct = {
-      button: addToCartButtonDOM,
-      id: productId,
+    openSelectionModal({
+      id: addToCartButtonDOM.getAttribute('data-product-id'),
       image: productDOM.querySelector(".product-image").getAttribute("src"),
       name: productDOM.querySelector(".product-name").innerText,
-      price: formatPrice(productDOM.querySelector(".product-price").innerText)
-    };
-
-    // Open specifications modal
-    const vehicleModal = document.getElementById("vehicle-modal");
-    if (vehicleModal) {
-      vehicleModal.classList.add("is-open");
-      vehicleModal.setAttribute("aria-hidden", "false");
-      
-      const titleEl = document.getElementById("modal-title");
-      const descEl = document.getElementById("modal-desc");
-      const previewDiv = document.getElementById("modal-price-preview");
-      
-      const panelVehicle = document.getElementById("modal-fields-vehicle");
-      const panelBattery = document.getElementById("modal-fields-battery");
-      const panelSprings = document.getElementById("modal-fields-springs");
-      const panelOil = document.getElementById("modal-fields-oil");
-      
-      if (previewDiv) previewDiv.style.display = "none";
-      
-      if (productId === "p6") {
-        // Battery Spec Panel
-        if (titleEl) titleEl.innerText = "Select Battery Specifications";
-        if (descEl) descEl.innerText = "Select your desired voltage, capacity, and battery build standard.";
-        if (panelVehicle) panelVehicle.style.display = "none";
-        if (panelBattery) panelBattery.style.display = "block";
-        if (panelSprings) panelSprings.style.display = "none";
-        if (panelOil) panelOil.style.display = "none";
-        
-        const selectVolt = document.getElementById("select-battery-voltage");
-        const selectType = document.getElementById("select-battery-type");
-        if (selectVolt) selectVolt.value = "";
-        if (selectType) selectType.value = "";
-      } else if (productId === "p7") {
-        // Coil Springs Spec Panel
-        if (titleEl) titleEl.innerText = "Select Coil Spring Specifications";
-        if (descEl) descEl.innerText = "Select the spring wire thickness duty and axle installation position.";
-        if (panelVehicle) panelVehicle.style.display = "none";
-        if (panelBattery) panelBattery.style.display = "none";
-        if (panelSprings) panelSprings.style.display = "block";
-        if (panelOil) panelOil.style.display = "none";
-        
-        const selectSpringType = document.getElementById("select-springs-type");
-        const selectSpringPos = document.getElementById("select-springs-position");
-        if (selectSpringType) selectSpringType.value = "";
-        if (selectSpringPos) selectSpringPos.value = "";
-      } else if (productId === "p3") {
-        // Motor Oil Spec Panel
-        if (titleEl) titleEl.innerText = "Select Motor Oil Specifications";
-        if (descEl) descEl.innerText = "Select your preferred oil brand and engine viscosity type.";
-        if (panelVehicle) panelVehicle.style.display = "none";
-        if (panelBattery) panelBattery.style.display = "none";
-        if (panelSprings) panelSprings.style.display = "none";
-        if (panelOil) panelOil.style.display = "block";
-        
-        const selectBrand = document.getElementById("select-oil-brand");
-        const selectType = document.getElementById("select-oil-type");
-        if (selectBrand) selectBrand.value = "";
-        if (selectType) selectType.value = "";
-      } else {
-        // Standard Vehicle Panel
-        if (titleEl) titleEl.innerText = "Select Your Vehicle";
-        if (descEl) descEl.innerText = "Select your car make and model to match the exact compatible part for your vehicle.";
-        if (panelVehicle) panelVehicle.style.display = "block";
-        if (panelBattery) panelBattery.style.display = "none";
-        if (panelSprings) panelSprings.style.display = "none";
-        if (panelOil) panelOil.style.display = "none";
-        
-        const selectMake = document.getElementById("select-make");
-        const selectModel = document.getElementById("select-model");
-        if (selectMake) selectMake.value = "";
-        if (selectModel) {
-          selectModel.value = "";
-          selectModel.disabled = true;
-        }
-      }
-    }
+      price: parseFloat(addToCartButtonDOM.getAttribute('data-price')) || 0
+    });
   });
 });
+
+// Returns {id, name, price} for the current modal selection, or {error} if incomplete.
+function currentSelection() {
+  const base = selectedBaseProduct;
+  const spec = CATALOG.specProducts[base.id];
+
+  if (spec) {
+    const [first, second] = spec.groups.map((group, i) => {
+      const key = document.getElementById(`select-spec-${i}`).value;
+      return key ? { key, ...group.options[key] } : null;
+    });
+    if (!first || !second) {
+      return { error: `Please select both ${spec.groups[0].label} and ${spec.groups[1].label}!` };
+    }
+    return {
+      id: `${base.id}_${first.key}_${second.key}`,
+      name: spec.name_format.replace("{first}", first.label).replace("{second}", second.label),
+      price: base.price + first.modifier + second.modifier
+    };
+  }
+
+  const make = document.getElementById("select-make").value;
+  const model = document.getElementById("select-model").value;
+  if (!make || !model) {
+    return { error: "Please select both Make and Model!" };
+  }
+  // Must match catalog.vehicle_product_id on the backend
+  return {
+    id: `${base.id}_${make.toLowerCase()}_${model.toLowerCase().replace(/ /g, '_').replace(/-/g, '_')}`,
+    name: `${make} ${model} ${base.name}`,
+    price: base.price + (CATALOG.makeModifiers[make] || 0)
+  };
+}
 
 function insertItemToDOM(product) {
   if (!cartDOM) return; // catalog page won't have cartDOM
@@ -395,61 +349,27 @@ function saveCart() {
 function initVehicleModal() {
   const selectMake = document.getElementById("select-make");
   const selectModel = document.getElementById("select-model");
-  
-  const selectVolt = document.getElementById("select-battery-voltage");
-  const selectBatType = document.getElementById("select-battery-type");
-  
-  const selectSpringType = document.getElementById("select-springs-type");
-  const selectSpringPos = document.getElementById("select-springs-position");
-  
   const closeBtn = document.getElementById("close-vehicle-modal");
   const confirmBtn = document.getElementById("confirm-vehicle");
   const vehicleModal = document.getElementById("vehicle-modal");
-  
-  if (!selectMake) return; // not on catalog page
 
-  // Clear and add placeholder
-  selectMake.innerHTML = '<option value="">-- Choose Make --</option>';
-  Object.keys(MAKES_AND_MODELS).forEach(make => {
-    const opt = document.createElement("option");
-    opt.value = make;
-    opt.innerText = make;
-    selectMake.appendChild(opt);
-  });
+  if (!selectMake) return;
+
+  const makes = {};
+  Object.keys(CATALOG.makes).forEach(make => { makes[make] = make; });
+  fillSelect(selectMake, "-- Choose Make --", makes);
 
   selectMake.addEventListener("change", () => {
     const make = selectMake.value;
-    selectModel.innerHTML = '<option value="">-- Choose Model --</option>';
-    if (make) {
-      selectModel.disabled = false;
-      MAKES_AND_MODELS[make].forEach(model => {
-        const opt = document.createElement("option");
-        opt.value = model;
-        opt.innerText = model;
-        selectModel.appendChild(opt);
-      });
-    } else {
-      selectModel.disabled = true;
-    }
+    const models = {};
+    (CATALOG.makes[make] || []).forEach(model => { models[model] = model; });
+    fillSelect(selectModel, "-- Choose Model --", models);
+    selectModel.disabled = !make;
     updatePricePreview();
   });
 
-  selectModel.addEventListener("change", updatePricePreview);
-  
-  const selectOilBrand = document.getElementById("select-oil-brand");
-  const selectOilType = document.getElementById("select-oil-type");
-
-  // Battery change listeners
-  selectVolt.addEventListener("change", updatePricePreview);
-  selectBatType.addEventListener("change", updatePricePreview);
-  
-  // Springs change listeners
-  selectSpringType.addEventListener("change", updatePricePreview);
-  selectSpringPos.addEventListener("change", updatePricePreview);
-
-  // Oil change listeners
-  selectOilBrand?.addEventListener("change", updatePricePreview);
-  selectOilType?.addEventListener("change", updatePricePreview);
+  [selectModel, document.getElementById("select-spec-0"), document.getElementById("select-spec-1")]
+    .forEach(el => el?.addEventListener("change", updatePricePreview));
 
   closeBtn?.addEventListener("click", () => {
     vehicleModal.classList.remove("is-open");
@@ -457,70 +377,17 @@ function initVehicleModal() {
   });
 
   confirmBtn?.addEventListener("click", () => {
-    let specId = "";
-    let specName = "";
-    let priceModifier = 0;
-    
-    if (selectedBaseProduct.id === "p6") {
-      // Battery confirmation
-      const volt = selectVolt.value;
-      const type = selectBatType.value;
-      if (!volt || !type) {
-        alert("Please select both Battery Voltage/Capacity and Type!");
-        return;
-      }
-      specId = `p6_${volt}_${type}`;
-      specName = `${BATTERY_TYPES[type].label} Battery (${BATTERY_VOLTAGES[volt].label})`;
-      priceModifier = BATTERY_VOLTAGES[volt].modifier + BATTERY_TYPES[type].modifier;
-    } else if (selectedBaseProduct.id === "p7") {
-      // Springs confirmation
-      const stype = selectSpringType.value;
-      const pos = selectSpringPos.value;
-      if (!stype || !pos) {
-        alert("Please select both Spring Type/Thickness and Position!");
-        return;
-      }
-      specId = `p7_${stype}_${pos}`;
-      specName = `${SPRING_TYPES[stype].label} Coil Springs (${SPRING_POSITIONS[pos].label})`;
-      priceModifier = SPRING_TYPES[stype].modifier + SPRING_POSITIONS[pos].modifier;
-    } else if (selectedBaseProduct.id === "p3") {
-      // Motor Oil confirmation
-      const brand = selectOilBrand.value;
-      const type = selectOilType.value;
-      if (!brand || !type) {
-        alert("Please select both Oil Brand and Type!");
-        return;
-      }
-      specId = `p3_${brand}_${type}`;
-      specName = `${OIL_BRANDS[brand].label} ${OIL_TYPES[type].label} Motor Oil`;
-      priceModifier = OIL_BRANDS[brand].modifier + OIL_TYPES[type].modifier;
-    } else {
-      // Vehicle confirmation
-      const make = selectMake.value;
-      const model = selectModel.value;
-      if (!make || !model) {
-        alert("Please select both Make and Model!");
-        return;
-      }
-      specId = `${selectedBaseProduct.id}_${make.toLowerCase()}_${model.toLowerCase().replace(/ /g, '_').replace(/-/g, '_')}`;
-      specName = `${make} ${model} ${selectedBaseProduct.name}`;
-      
-      if (make === "Mercedes-Benz" || make === "BMW") {
-        priceModifier = 2500;
-      } else if (make === "Toyota" || make === "Subaru") {
-        priceModifier = 400;
-      } else if (make === "Nissan" || make === "Mazda") {
-        priceModifier = -200;
-      }
+    const selection = currentSelection();
+    if (selection.error) {
+      alert(selection.error);
+      return;
     }
-    
-    const specPrice = selectedBaseProduct.price + priceModifier;
 
     const product = {
-      id: specId,
+      id: selection.id,
       image: selectedBaseProduct.image,
-      name: specName,
-      price: specPrice,
+      name: selection.name,
+      price: selection.price,
       quantity: 1
     };
 
@@ -554,51 +421,12 @@ function updatePricePreview() {
   const previewDiv = document.getElementById("modal-price-preview");
   if (!previewDiv || !selectedBaseProduct) return;
 
-  let priceModifier = 0;
-  let isValid = false;
-
-  if (selectedBaseProduct.id === "p6") {
-    const volt = document.getElementById("select-battery-voltage").value;
-    const type = document.getElementById("select-battery-type").value;
-    if (volt && type) {
-      priceModifier = BATTERY_VOLTAGES[volt].modifier + BATTERY_TYPES[type].modifier;
-      isValid = true;
-    }
-  } else if (selectedBaseProduct.id === "p7") {
-    const stype = document.getElementById("select-springs-type").value;
-    const pos = document.getElementById("select-springs-position").value;
-    if (stype && pos) {
-      priceModifier = SPRING_TYPES[stype].modifier + SPRING_POSITIONS[pos].modifier;
-      isValid = true;
-    }
-  } else if (selectedBaseProduct.id === "p3") {
-    const brand = document.getElementById("select-oil-brand").value;
-    const type = document.getElementById("select-oil-type").value;
-    if (brand && type) {
-      priceModifier = OIL_BRANDS[brand].modifier + OIL_TYPES[type].modifier;
-      isValid = true;
-    }
-  } else {
-    const make = document.getElementById("select-make").value;
-    const model = document.getElementById("select-model").value;
-    if (make && model) {
-      if (make === "Mercedes-Benz" || make === "BMW") {
-        priceModifier = 2500;
-      } else if (make === "Toyota" || make === "Subaru") {
-        priceModifier = 400;
-      } else if (make === "Nissan" || make === "Mazda") {
-        priceModifier = -200;
-      }
-      isValid = true;
-    }
-  }
-
-  if (isValid) {
-    const finalPrice = selectedBaseProduct.price + priceModifier;
-    previewDiv.innerText = `Price: KSh ${finalPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    previewDiv.style.display = "block";
-  } else {
+  const selection = currentSelection();
+  if (selection.error) {
     previewDiv.style.display = "none";
+  } else {
+    previewDiv.innerText = `Price: KSh ${selection.price.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    previewDiv.style.display = "block";
   }
 }
 

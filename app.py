@@ -6,6 +6,7 @@ load_dotenv()
 
 from firebase_config import get_firestore_client
 from mpesa import MpesaClient
+from catalog import BASE_PRODUCTS, get_product, frontend_config
 
 app = Flask(__name__)
 
@@ -69,131 +70,9 @@ mp = MpesaClient(
     passkey=os.getenv("MPESA_PASSKEY")
 )
 
-MAKES_AND_MODELS = {
-    "Toyota": ["Vitz", "Fielder", "Corolla", "Harrier", "Land Cruiser", "Probox"],
-    "Nissan": ["X-Trail", "Note", "Sylphy", "Wingroad"],
-    "Subaru": ["Impreza", "Forester", "Legacy"],
-    "Honda": ["Fit", "Civic", "CR-V"],
-    "Mazda": ["Demio", "Axela", "CX-5"],
-    "Mitsubishi": ["Outlander", "Lancer", "Pajero"],
-    "Volkswagen": ["Golf", "Tiguan", "Polo", "Passat"],
-    "Mercedes-Benz": ["C-Class", "E-Class", "GLC"],
-    "BMW": ["3 Series", "5 Series", "X3", "X5"],
-    "Hyundai": ["Tucson", "Elantra", "Santa Fe"]
-}
-
-BATTERY_VOLTAGES = {
-    "12v_45ah": {"label": "12V 45Ah", "modifier": -1500.00},
-    "12v_65ah": {"label": "12V 65Ah", "modifier": 0.00},
-    "12v_75ah": {"label": "12V 75Ah", "modifier": 1500.00},
-    "12v_90ah": {"label": "12V 90Ah", "modifier": 3500.00},
-    "24v_100ah": {"label": "24V 100Ah", "modifier": 7500.00}
-}
-
-BATTERY_TYPES = {
-    "maintenance_free": {"label": "Maintenance-Free (SLA)", "modifier": 0.00},
-    "agm": {"label": "AGM (Start-Stop)", "modifier": 4000.00},
-    "efb": {"label": "EFB", "modifier": 2000.00}
-}
-
-SPRING_TYPES = {
-    "standard_14mm": {"label": "Standard Duty (14mm)", "modifier": 0.00},
-    "heavy_duty_16mm": {"label": "Heavy Duty (16mm)", "modifier": 1500.00},
-    "lowered_12mm": {"label": "Lowered / Sports (12mm)", "modifier": 2500.00}
-}
-
-SPRING_POSITIONS = {
-    "front": {"label": "Front Axle", "modifier": 0.00},
-    "rear": {"label": "Rear Axle", "modifier": -500.00}
-}
-
-OIL_BRANDS = {
-    "castrol": {"label": "Castrol", "modifier": 400.00},
-    "shell": {"label": "Shell Helix", "modifier": 200.00},
-    "mobil": {"label": "Mobil 1", "modifier": 500.00},
-    "total": {"label": "Total Quartz", "modifier": 0.00}
-}
-
-OIL_TYPES = {
-    "synthetic": {"label": "Fully Synthetic (5W-30)", "modifier": 1500.00},
-    "semi_synthetic": {"label": "Semi-Synthetic (10W-40)", "modifier": 0.00},
-    "heavy_duty_4wd": {"label": "Heavy Duty / 4WD (15W-40)", "modifier": 1000.00}
-}
-
-BASE_PRODUCTS = [
-    {"id": "p1", "name": "Brake Pad", "price": 3500.00, "image": "brakepad.jpg"},
-    {"id": "p2", "name": "Air Filter", "price": 2200.00, "image": "air_filter.jpg"},
-    {"id": "p3", "name": "Motor Oil", "price": 4500.00, "image": "motor_oil.jpg"},
-    {"id": "p4", "name": "Car Wheel", "price": 12000.00, "image": "wheel.jpg"},
-    {"id": "p5", "name": "Side Mirror", "price": 3200.00, "image": "side_mirror.jpg"},
-    {"id": "p6", "name": "Car Battery", "price": 9500.00, "image": "battery.jpg"},
-    {"id": "p7", "name": "Coil Springs", "price": 6000.00, "image": "springs.jpg"},
-]
-
-PRODUCTS = []
-# Add base generic products
-for bp in BASE_PRODUCTS:
-    PRODUCTS.append(bp)
-
-# Dynamically register compatibility versions
-for bp in BASE_PRODUCTS:
-    if bp["id"] == "p6": # Car Battery
-        for v_key, v_info in BATTERY_VOLTAGES.items():
-            for t_key, t_info in BATTERY_TYPES.items():
-                specific_id = f"p6_{v_key}_{t_key}"
-                specific_name = f"{t_info['label']} Battery ({v_info['label']})"
-                price = bp["price"] + v_info["modifier"] + t_info["modifier"]
-                PRODUCTS.append({
-                    "id": specific_id,
-                    "name": specific_name,
-                    "price": price,
-                    "image": bp["image"]
-                })
-    elif bp["id"] == "p7": # Coil Springs
-        for t_key, t_info in SPRING_TYPES.items():
-            for p_key, p_info in SPRING_POSITIONS.items():
-                specific_id = f"p7_{t_key}_{p_key}"
-                specific_name = f"{t_info['label']} Coil Springs ({p_info['label']})"
-                price = bp["price"] + t_info["modifier"] + p_info["modifier"]
-                PRODUCTS.append({
-                    "id": specific_id,
-                    "name": specific_name,
-                    "price": price,
-                    "image": bp["image"]
-                })
-    elif bp["id"] == "p3": # Motor Oil
-        for b_key, b_info in OIL_BRANDS.items():
-            for t_key, t_info in OIL_TYPES.items():
-                specific_id = f"p3_{b_key}_{t_key}"
-                specific_name = f"{b_info['label']} {t_info['label']} Motor Oil"
-                price = bp["price"] + b_info["modifier"] + t_info["modifier"]
-                PRODUCTS.append({
-                    "id": specific_id,
-                    "name": specific_name,
-                    "price": price,
-                    "image": bp["image"]
-                })
-    else: # Vehicle-specific (p1, p2, p4, p5)
-        for make, models in MAKES_AND_MODELS.items():
-            for model in models:
-                specific_id = f"{bp['id']}_{make.lower()}_{model.lower().replace(' ', '_').replace('-', '_')}"
-                specific_name = f"{make} {model} {bp['name']}"
-                
-                # Specific price adjustments based on brand
-                price_modifier = 0
-                if make in ["Mercedes-Benz", "BMW"]:
-                    price_modifier = 2500
-                elif make in ["Toyota", "Subaru"]:
-                    price_modifier = 400
-                elif make in ["Nissan", "Mazda"]:
-                    price_modifier = -200
-                    
-                PRODUCTS.append({
-                    "id": specific_id,
-                    "name": specific_name,
-                    "price": bp["price"] + price_modifier,
-                    "image": bp["image"]
-                })
+@app.context_processor
+def inject_catalog_config():
+    return {"catalog_config": frontend_config()}
 
 @app.route('/')
 def index():
@@ -218,7 +97,7 @@ def checkout():
     if not phone or not product_id:
         return jsonify({"error": "phone and product_id required"}), 400
 
-    product = next((p for p in PRODUCTS if p['id'] == product_id), None)
+    product = get_product(product_id)
     if not product:
         return jsonify({"error": "product not found"}), 404
 

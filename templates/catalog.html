@@ -19,7 +19,7 @@
         <div class="card__price-row">
           <span class="product-price pdp__price">KSh {{ '{:,.2f}'.format(p.price) }}</span>
         </div>
-        <button class="pdp__add" data-action="add-to-cart" data-product-id="{{ p.id }}">Add To Cart</button>
+        <button class="pdp__add" data-action="add-to-cart" data-product-id="{{ p.id }}" data-price="{{ p.price }}">Add To Cart</button>
       </div>
       {% else %}
       <div class="catalog-empty" data-reveal style="grid-column: 1 / -1; text-align: center; padding: var(--space-lg) 0; color: var(--ink-muted);">

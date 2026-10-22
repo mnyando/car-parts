@@ -62,71 +62,15 @@
             </div>
           </div>
 
-          <!-- Battery specific fields (Voltage & Battery Type) -->
-          <div id="modal-fields-battery" style="display: none;">
+          <!-- Spec-based fields (Battery, Coil Springs, Motor Oil) - filled from window.CATALOG -->
+          <div id="modal-fields-spec" style="display: none;">
             <div class="field">
-              <label for="select-battery-voltage">Voltage / Capacity</label>
-              <select id="select-battery-voltage">
-                <option value="">-- Choose Voltage & Capacity --</option>
-                <option value="12v_45ah">12V 45Ah (Small Hatchback)</option>
-                <option value="12v_65ah">12V 65Ah (Medium Sedan)</option>
-                <option value="12v_75ah">12V 75Ah (SUV / Crossover)</option>
-                <option value="12v_90ah">12V 90Ah (Large SUV / Diesel)</option>
-                <option value="24v_100ah">24V 100Ah (Commercial Truck)</option>
-              </select>
+              <label for="select-spec-0" id="label-spec-0"></label>
+              <select id="select-spec-0"></select>
             </div>
             <div class="field" style="margin-top: var(--space-sm);">
-              <label for="select-battery-type">Battery Type</label>
-              <select id="select-battery-type">
-                <option value="">-- Choose Battery Type --</option>
-                <option value="maintenance_free">Maintenance-Free (SLA)</option>
-                <option value="agm">AGM (Start-Stop / Premium)</option>
-                <option value="efb">EFB (Enhanced Flooded)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Coil Springs specific fields (Thickness & Position) -->
-          <div id="modal-fields-springs" style="display: none;">
-            <div class="field">
-              <label for="select-springs-type">Spring Type / Thickness</label>
-              <select id="select-springs-type">
-                <option value="">-- Choose Type & Wire Thickness --</option>
-                <option value="standard_14mm">Standard Duty (14mm wire)</option>
-                <option value="heavy_duty_16mm">Heavy Duty (16mm wire - Load Carrying)</option>
-                <option value="lowered_12mm">Lowered / Sports (12mm wire - Performance)</option>
-              </select>
-            </div>
-            <div class="field" style="margin-top: var(--space-sm);">
-              <label for="select-springs-position">Position / Axle</label>
-              <select id="select-springs-position">
-                <option value="">-- Choose Position --</option>
-                <option value="front">Front Axle (Pair)</option>
-                <option value="rear">Rear Axle (Pair)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Motor Oil specific fields (Brand & Viscosity/Type) -->
-          <div id="modal-fields-oil" style="display: none;">
-            <div class="field">
-              <label for="select-oil-brand">Oil Brand</label>
-              <select id="select-oil-brand">
-                <option value="">-- Choose Brand --</option>
-                <option value="castrol">Castrol</option>
-                <option value="shell">Shell Helix</option>
-                <option value="mobil">Mobil 1</option>
-                <option value="total">Total Quartz</option>
-              </select>
-            </div>
-            <div class="field" style="margin-top: var(--space-sm);">
-              <label for="select-oil-type">Oil Type & Viscosity</label>
-              <select id="select-oil-type">
-                <option value="">-- Choose Oil Type --</option>
-                <option value="synthetic">Fully Synthetic (5W-30) - Premium Passenger</option>
-                <option value="semi_synthetic">Semi-Synthetic (10W-40) - Standard Daily</option>
-                <option value="heavy_duty_4wd">Heavy Duty / 4WD (15W-40) - SUV & Diesel</option>
-              </select>
+              <label for="select-spec-1" id="label-spec-1"></label>
+              <select id="select-spec-1"></select>
             </div>
           </div>
 
@@ -141,6 +85,7 @@
     {% block content %}{% endblock %}
     {% include 'footer.html' %}
 
+    <script>window.CATALOG = {{ catalog_config|tojson }};</script>
     <script defer src="{{ url_for('static', filename='js/interactions.js') }}"></script>
     {% block scripts %}{% endblock %}
   </body>
