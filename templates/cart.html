@@ -5,12 +5,6 @@
 
   <main class="container section">
     <p class="eyebrow" data-reveal>Your Cart</p>
-    <div class="cart" style="margin-top: var(--space-md);"></div>
-    <div class="cart-footer" style="margin-top: var(--space-md); border-top: 1px solid var(--line); padding-top: var(--space-sm);">
-      <h2 class="cart-footer-total" data-action="total-price" style="font-size: var(--fs-h2); font-weight: 600; margin-bottom: var(--space-sm); font-variant-numeric: tabular-nums;">0</h2>
-      <a class="pdp__add" href="{{ url_for('catalog') }}" style="display: inline-block; text-align: center; max-width: 280px;">Continue Shopping</a>
-    </div>
+    <div class="cart-page" data-cart-root></div>
   </main>
-
-  <script src="{{ url_for('static', filename='cart.js') }}"></script>
 {% endblock %}
