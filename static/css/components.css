@@ -124,6 +124,21 @@
 .trust { display: flex; flex-wrap: wrap; gap: var(--space-md); font-size: var(--fs-small); color: var(--ink-muted); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: var(--space-md) 0; text-transform: uppercase; font-weight: 500; letter-spacing: var(--tracking-wide); }
 
 /* --- Flash Messages & Alerts --- */
+/* --- Auth pages --- */
+.auth { max-width: 480px; padding-top: calc(var(--section) + 20px); }
+.auth__title { font-size: var(--fs-h2); margin: var(--space-xs) 0 var(--space-xs); }
+.auth__lead { color: var(--ink-muted); margin-bottom: var(--space-md); }
+.auth__form { display: flex; flex-direction: column; gap: var(--space-sm); }
+.auth__form .cart-btn { margin-top: var(--space-xs); }
+.auth__switch { margin-top: var(--space-md); color: var(--ink-muted); font-size: var(--fs-small); }
+.auth__switch a { color: var(--ink); border-bottom: 1px solid var(--ink); }
+
+/* --- Drawer account row --- */
+.drawer__account { display: flex; align-items: center; gap: var(--space-sm); color: var(--ink-muted); font-size: var(--fs-small); margin-top: var(--space-md); }
+.drawer__account button { background: none; border: 1px solid rgba(255,255,255,0.35); color: #fff; padding: 8px 14px; font: inherit; font-size: var(--fs-small); text-transform: uppercase; letter-spacing: var(--tracking-wide); cursor: pointer; }
+
+.alert--error { border-color: #c62828; color: #c62828; }
+.alert--success { border-color: #2e7d32; color: #2e7d32; }
 .alert, .flash-message { padding: 16px; border: 1px solid var(--ink); background: #fff; color: var(--ink); margin-bottom: var(--space-md); font-size: var(--fs-small); font-weight: 500; border-radius: var(--radius); }
 
 /* --- Vehicle Compatibility Modal --- */

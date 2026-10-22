@@ -4,7 +4,7 @@ import hmac
 import time
 import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, jsonify, url_for
+from flask import Flask, g, render_template, request, jsonify, url_for
 
 load_dotenv()
 
@@ -12,6 +12,7 @@ from firebase_config import get_firestore_client
 from mpesa import MpesaClient, MpesaError
 from catalog import frontend_config, get_product, list_products, resolve_variant, seed_products
 from local_store import LocalStore
+from auth import init_auth, is_admin, login_required
 
 MAX_QUANTITY = 99
 MAX_CART_LINES = 50
@@ -34,6 +35,9 @@ except Exception as e:
 
 if seed_products(db):
     print("Seeded default products", flush=True)
+
+# Safaricom can't send our CSRF token, the callback is protected by MPESA_CALLBACK_SECRET instead
+init_auth(app, db, csrf_exempt={'mpesa_callback'})
 
 # Initialize Mpesa client
 mp = MpesaClient(
@@ -70,17 +74,34 @@ def adjust_stock(product_id, delta):
 def inject_template_globals():
     return {"catalog_config": frontend_config(), "year": datetime.date.today().year, "image_url": image_url}
 
+ERROR_PAGES = {
+    400: ("Something went wrong", "Your session may have expired. Please go back and try again."),
+    403: ("Access denied", "You don't have permission to view this page."),
+    404: ("Page not found", "The page you're looking for doesn't exist."),
+}
+
+
+@app.errorhandler(400)
+@app.errorhandler(403)
+@app.errorhandler(404)
+def error_page(e):
+    title, message = ERROR_PAGES[e.code]
+    return render_template('error.html', code=e.code, title=title, message=message), e.code
+
+
 @app.route('/')
 def index():
     return render_template('landing.html')
 
 
 @app.route('/catalog')
+@login_required
 def catalog():
     return render_template('catalog.html', products=list_products(db))
 
 
 @app.route('/cart')
+@login_required
 def cart():
     return render_template('cart.html')
 
@@ -154,6 +175,7 @@ def parse_cart_items(data):
 
 
 @app.route('/checkout', methods=['POST'])
+@login_required
 def checkout():
     data = request.get_json(silent=True) or request.form.to_dict()
 
@@ -172,6 +194,7 @@ def checkout():
     # Create order in Firestore (or local fallback)
     order_ref = db.collection('orders').document()
     order_ref.set({
+        'user_id': g.user['id'],
         'items': lines,
         'phone': phone,
         'amount': amount,
@@ -286,6 +309,7 @@ def mpesa_callback():
 
 
 @app.route('/orders/<order_id>/status')
+@login_required
 def order_status(order_id):
     """Payment status for the checkout page to poll. Falls back to an STK Push Query when the
     callback hasn't arrived (e.g. running locally, where Safaricom can't reach the callback URL)."""
@@ -294,6 +318,9 @@ def order_status(order_id):
     if not snapshot.exists:
         return jsonify({'error': 'order not found'}), 404
     order = snapshot.to_dict()
+    # Shoppers can only see their own orders (same 404 so ids can't be probed)
+    if order.get('user_id') != g.user['id'] and not is_admin():
+        return jsonify({'error': 'order not found'}), 404
     status = order.get('status', 'pending')
 
     checkout_request_id = order.get('checkout_request_id')

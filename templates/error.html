@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  {% include 'navbar.html' %}
+
+  <main class="container section auth">
+    <p class="eyebrow">Error {{ code }}</p>
+    <h1 class="auth__title">{{ title }}</h1>
+    <p class="auth__lead">{{ message }}</p>
+    <a class="cart-btn" href="{{ url_for('index') }}" style="width: auto; display: inline-block; padding: 14px 28px;">Back to home</a>
+  </main>
+{% endblock %}

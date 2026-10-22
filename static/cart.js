@@ -10,15 +10,19 @@ const CATALOG = window.CATALOG || { makes: {}, makeModifiers: {}, specKinds: {} 
 const PAYMENT_POLL_INTERVAL_MS = 4000;
 const PAYMENT_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
+// Each account has its own saved cart on a shared browser
+const CART_KEY = `cart:${(window.CURRENT_USER && window.CURRENT_USER.id) || "guest"}`;
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || "";
+
 let cart = loadCart();
 // stage: cart | form | submitting | waiting | paid | failed | timeout
-let checkoutState = { stage: "cart", phone: "", message: "", orderId: null, reference: null, amount: 0 };
+let checkoutState = { stage: "cart", phone: (window.CURRENT_USER && window.CURRENT_USER.phone) || "", message: "", orderId: null, reference: null, amount: 0 };
 let pollTimer = null;
 let selectedBaseProduct = null;
 
 function loadCart() {
   try {
-    const stored = JSON.parse(localStorage.getItem("cart"));
+    const stored = JSON.parse(localStorage.getItem(CART_KEY));
     if (!Array.isArray(stored)) return [];
     return stored.filter(item => item && item.id && item.product_id && item.name && Number(item.quantity) > 0)
       .map(item => ({ ...item, price: Number(item.price) || 0, quantity: Number(item.quantity) }));
@@ -29,7 +33,7 @@ function loadCart() {
 
 function saveCart() {
   try {
-    localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
   } catch (e) { /* private mode / storage full: cart still works for this page view */ }
   renderCart();
 }
@@ -208,13 +212,17 @@ async function submitCheckout(phoneValue) {
     // Send every cart line; the server re-prices them from the catalog
     const response = await fetch("/checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
       body: JSON.stringify({
         phone: phone,
         items: cart.map(item => ({ product_id: item.product_id, options: item.options || {}, quantity: item.quantity }))
       })
     });
     const result = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+      location.href = result.login_url || "/login";
+      return;
+    }
     if (!response.ok) {
       throw new Error(result.error || "Failed to start checkout");
     }
@@ -239,7 +247,7 @@ function pollPaymentStatus(orderId, startedAt) {
 
     if (status === "paid") {
       cart = [];
-      try { localStorage.removeItem("cart"); } catch (e) { /* ignore */ }
+      try { localStorage.removeItem(CART_KEY); } catch (e) { /* ignore */ }
       setCheckout({ stage: "paid" });
     } else if (status === "cancelled") {
       setCheckout({ stage: "failed", message: "The payment request was cancelled on your phone. Your cart has been kept." });
@@ -296,7 +304,7 @@ document.addEventListener("input", (e) => {
 
 // Another tab changed the cart
 window.addEventListener("storage", (e) => {
-  if (e.key === "cart") {
+  if (e.key === CART_KEY) {
     cart = loadCart();
     renderCart();
   }

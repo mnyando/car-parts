@@ -59,6 +59,11 @@ pip install -r requirements.txt
 ### 2. Environment Configuration
 Create a `.env` file in the root directory and add the following keys:
 ```env
+# Accounts: long random string used to sign login sessions (required in production)
+SECRET_KEY=change_me_to_a_long_random_string
+# Whoever signs up / logs in with these emails becomes an admin (comma separated)
+ADMIN_EMAIL=you@example.com
+
 # M-Pesa API settings
 MPESA_ENV=sandbox
 MPESA_CONSUMER_KEY=your_consumer_key

@@ -7,7 +7,11 @@
         <span>/</span>
         <button data-lang="sw">SW</button>
       </div>
+      {% if current_user %}
       <button class="hdr__cart" data-cart-open aria-label="Open cart">Cart (<span data-cart-count>0</span>)</button>
+      {% else %}
+      <a class="hdr__cart" href="{{ url_for('auth.login') }}">Log in</a>
+      {% endif %}
       <button class="hdr__burger" data-menu-open aria-label="Open menu"><span></span><span></span></button>
     </div>
   </div>
