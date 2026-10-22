@@ -8,7 +8,7 @@ def get_firestore_client():
         raise RuntimeError('FIREBASE_CRED_PATH environment variable not set')
     cred = credentials.Certificate(cred_path)
     try:
-        app = firebase_admin.get_app()
+        firebase_admin.get_app()
     except ValueError:
         firebase_admin.initialize_app(cred)
     return firestore.client()
